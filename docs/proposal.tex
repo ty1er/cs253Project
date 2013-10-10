@@ -20,14 +20,15 @@
 
 \section*{Introduction}
 
-Building distributed application is intrinsically hard task.
-Most of the assumptions, which are legitimate for centralized systems, does not hold in distributed environment \cite{deutsch1992eight}.
+Building distributed applications is an intrinsically hard task.
+Most of the assumptions, which are legitimate for centralized systems, do not hold in distributed environments \cite{deutsch1992eight}.
 
-Given assumptions \cite{deutsch1992eight}, network partition, i.e. temporary violation of network connectivity, is indistinguishable from the simple node failure. 
-However, network partitions are a topic of particular interest, since they are inherently connected with other vital properties of distributed systems \cite{brewer2000towards}.
+Considering given assumptions in \cite{deutsch1992eight}, network partition, i.e. temporary violation of network connectivity, is indistinguishable from the simple node failure. 
+However, network partition is a topic of particular interest, since it is inherently connected with other vital properties of distributed systems \cite{brewer2000towards}.
 
-Surprisingly, there are not that many works, where the properties of distributed systems are experimentally results evaluated in case, when a partition is introduced in the network.
-The goal of current project is to make a case study for different distributed storage systems, measuring how these systems would perform under the assumption of network partition is the cluster.
+
+Surprisingly, limited number of experimental research have been done on distributed systems, when their networks have faced network partion challenges. 
+The goal of current project is to make a case study for different distributed storage systems, measuring how these systems would perform under the assumption of network partition in the cluster.
 
 \section*{Potential problems}
 
@@ -46,15 +47,15 @@ Proposed solution should include:
 	\item Creating scripts for installation and configuration of distributed storage system in cluster environment
 	\item Implementing a test application, which will perform consecutive writes on different storage nodes. The application should use specific system's semantics and API calls to ensure successful writes.
 	\item Creating scripts to emulate network partition  
-	\item Comparing write requests, persisted in the storage system, when the partition was introduced, against the period, when the network performed in regular way. Comparison information will be used to describe the storage system behavior in terms of distributed system properties (durability, consistency, availability, performance).
+	\item Comparing write requests, persisted in the storage system, when the partition was introduced, against the period, when the network performed in regular way. Comparison information will be used to describe the storage system behavior in terms of distributed system properties (durability, consistency, availability, and performance).
 \end{itemize}
 
 \section*{Evaluation plan}
 
 The set of system's properties, obtained in the last step, could be evaluated in several ways.
 
-Firstly, if the system claims to satisfy specific properties, when the network is partitioned, we could them to verify obtained results.
-Otherwise we could use the results of independent studies for the same or similar storage system (if available) \cite{jepsen}.
+Firstly, if the system claims to satisfy specific properties, when the network is partitioned, we could use them to verify obtained results.
+Otherwise we could use the results of independent studies for the same or similar storage system (if available). If the both previous methods were not applicable, a set of rational explanations and reasons for the results, may help us to alleviate validity concerns  \cite{jepsen}. 
 
 \printbibliography
 
