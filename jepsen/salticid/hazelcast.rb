@@ -18,7 +18,7 @@ role :hazelcast do
 
   task :start do
 	cd '/home/iabsa001/hazelcast/bin'
-	exec! 'server.sh', echo: true
+	exec! 'server.sh', :echo => true
   end
   
   task :restart do
