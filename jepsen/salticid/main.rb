@@ -1,18 +1,18 @@
 require 'fileutils'
 
-load __DIR__/'etcd.rb'
-load __DIR__/'mongo.rb'
-load __DIR__/'nuodb.rb'
-load __DIR__/'postgres.rb'
-load __DIR__/'redis.rb'
-load __DIR__/'riak.rb'
+#load __DIR__/'etcd.rb'
+#load __DIR__/'mongo.rb'
+#load __DIR__/'nuodb.rb'
+#load __DIR__/'postgres.rb'
+#load __DIR__/'redis.rb'
+#load __DIR__/'riak.rb'
 load __DIR__/'hazelcast.rb'
 
 role :base do
   task :setup do
     sudo do
       exec! 'yum groupinstall "Development Tools"'
-      exec! 'yum install -qy ntp curl wget git-core vim psmisc iptables bind-utils telnet nmap', echo: true
+      exec! 'yum install -qy ntp curl wget git-core vim psmisc iptables bind-utils telnet nmap', :echo => true
     end
   end
 
@@ -58,7 +58,7 @@ role :jepsen do
         iptables '-A', 'INPUT', '-s', n4, '-j', 'DROP'
         iptables '-A', 'INPUT', '-s', n5, '-j', 'DROP'
       end
-      iptables '--list', echo: true
+      iptables '--list', :echo => true
     end
   end
 
@@ -80,7 +80,7 @@ role :jepsen do
         iptables '-A', 'INPUT', '-s', n2, '-j', 'REJECT'
       end
 
-      iptables '--list', echo: true
+      iptables '--list', :echo => true
     end
   end
 
@@ -88,21 +88,21 @@ role :jepsen do
     sudo do
       log "Dropping all PG traffic."
       iptables '-A', 'INPUT', '-p', 'tcp', '--dport', 5432, '-j', 'DROP'
-      iptables '--list', echo: true
+      iptables '--list', :echo => true
     end
   end
 
   task :heal do
     sudo do
-      iptables '-F', echo: true
-      iptables '-X', echo: true
-      iptables '--list', echo: true
+      iptables '-F', :echo => true
+      iptables '-X', :echo => true
+      iptables '--list', :echo => true
     end
   end
 
   task :status do
     sudo do
-      iptables '--list', echo: true
+      iptables '--list', :echo => true
     end
   end
 end
