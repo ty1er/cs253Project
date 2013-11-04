@@ -129,7 +129,7 @@
      (ssh/with-connection session#
        (binding [*session*  session#
                  *host*     ~host
-                 *password* "ubuntu"]
+                 *password* "reverse"]
          ~@body))))
 
 (defmacro on-many

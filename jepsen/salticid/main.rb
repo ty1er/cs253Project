@@ -11,8 +11,7 @@ load __DIR__/'hazelcast.rb'
 role :base do
   task :setup do
     sudo do
-      exec! 'yum groupinstall "Development Tools"'
-      exec! 'yum install -qy ntp curl wget git-core vim psmisc iptables bind-utils telnet nmap', :echo => true
+      exec! 'apt-get install -y default-jre ntp curl wget build-essential git-core vim psmisc iptables dnsutils telnet nmap', :echo => true
     end
   end
 
@@ -49,9 +48,9 @@ role :jepsen do
 
   task :partition do
     sudo do
-      n3 = (getent 'ahosts', 'dblab-rack12').split("\n").reject {|line| line.start_with?("127.")}.first.split(" ").first
-      n4 = (getent 'ahosts', 'dblab-rack13').split("\n").reject {|line| line.start_with?("127.")}.first.split(" ").first
-      n5 = (getent 'ahosts', 'dblab-rack14').split("\n").reject {|line| line.start_with?("127.")}.first.split(" ").first
+      n3 = (getent 'ahosts', :n3).split("\n").reject {|line| line.start_with?("127.")}.first.split(" ").first
+      n4 = (getent 'ahosts', :n4).split("\n").reject {|line| line.start_with?("127.")}.first.split(" ").first
+      n5 = (getent 'ahosts', :n5).split("\n").reject {|line| line.start_with?("127.")}.first.split(" ").first
       if ['n1', 'n2'].include? name
         log "Partitioning from n3, n4 and n5."
         iptables '-A', 'INPUT', '-s', n3, '-j', 'DROP'
@@ -64,11 +63,11 @@ role :jepsen do
 
   task :partition_reject do
     sudo do
-      n1 = (getent 'ahosts', 'dblab-rack10').split("\n").reject {|line| line.start_with?("127.")}.first.split(" ").first
-      n2 = (getent 'ahosts', 'dblab-rack11').split("\n").reject {|line| line.start_with?("127.")}.first.split(" ").first
-      n3 = (getent 'ahosts', 'dblab-rack12').split("\n").reject {|line| line.start_with?("127.")}.first.split(" ").first
-      n4 = (getent 'ahosts', 'dblab-rack13').split("\n").reject {|line| line.start_with?("127.")}.first.split(" ").first
-      n5 = (getent 'ahosts', 'dblab-rack14').split("\n").reject {|line| line.start_with?("127.")}.first.split(" ").first
+      n1 = (getent 'ahosts', :n1).split("\n").reject {|line| line.start_with?("127.")}.first.split(" ").first
+      n2 = (getent 'ahosts', :n2).split("\n").reject {|line| line.start_with?("127.")}.first.split(" ").first
+      n3 = (getent 'ahosts', :n3).split("\n").reject {|line| line.start_with?("127.")}.first.split(" ").first
+      n4 = (getent 'ahosts', :n4).split("\n").reject {|line| line.start_with?("127.")}.first.split(" ").first
+      n5 = (getent 'ahosts', :n5).split("\n").reject {|line| line.start_with?("127.")}.first.split(" ").first
       if ['n1', 'n2'].include? name
         log "Partitioning from n3, n4 and n5."
         iptables '-A', 'INPUT', '-s', n3, '-j', 'REJECT'
@@ -108,14 +107,14 @@ role :jepsen do
 end
 
 group :jepsen do
-  host "dblab-rack10"
-  host "dblab-rack11"
-  host "dblab-rack12"
-  host "dblab-rack13"
-  host "dblab-rack14"
+  host :n1
+  host :n2
+  host :n3
+  host :n4
+  host :n5
   
   each_host do
-    user :iabsa001
+    user :ubuntu
     role :base
 #    role :cassandra
 #    role :etcd
@@ -128,6 +127,6 @@ group :jepsen do
 #    role :zk
     role :hazelcast
     role :jepsen
-    @password = ''
+    @password = 'reverse'
   end
 end
