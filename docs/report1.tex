@@ -1,0 +1,129 @@
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{indentfirst}
+\usepackage[table]{xcolor}
+
+\definecolor{light-gray}{gray}{0.9}
+
+\setlength{\textheight}{690pt}
+\setlength{\topmargin}{-0.3in}
+\setlength{\headsep}{0pt}
+\setlength{\oddsidemargin}{-6mm}
+\setlength{\textwidth}{7in}
+
+\title{CS 253: Project Report 1}
+\author{Ildar Absalyamov \and Longxiang Chen \and Ali Mohammadkhan}
+
+\begin{document}
+
+\maketitle
+
+\section*{Introduction}
+
+In order to investigate how distributed systems perform in the case of network partitions as the first stage we need to pick storage systems, which we are going to test in our project.
+However a storage system should have certain characteristics, to make it suitable for our investigation. 
+In the Section \ref{sec:characteristic} we briefly describe these characteristics and according to them in Section \ref{sec:candidates} we introduce distributed systems, that we have chosen as candidates for our experiments.
+Also in Section \ref{sec:others} we elaborate on other data stores that we considered as a potential candidates. 
+
+\section{Desired characteristics}
+\label{sec:characteristic}
+We have considered the following properties as leading for selecting storage systems, although they do not limit the number of proper storage systems to few numbers.
+As an additional criteria we used other properties like existing client libraries/APIs/drivers, documentation and developer community as well as our experience with these or similar systems.
+
+\subsection*{CAP theorem perspective}
+CAP theorem considers three aspects of distributed systems: consistency, availability, and partition tolerance. 
+Since the goal of the current project is to measure systems performance under assumption that the network is partitioned, we are left with two choices. 
+
+The first category is AP, system which emphasize on availability aspect of a distributed systems. 
+The second is CP system, which considers consistency as more important property of a distributed system.
+
+Ideally we would like to explore both kind of systems to provide a fair comparison.
+
+\subsection*{Flexible replication policy}
+We would like to use storage systems, which have robust and configurable replication policies. 
+The replication policy should be robust because a weak replication policy cannot perform well under network partitioning conditions and it should be configurable to enable us to investigate different aspects of a replication system.
+
+Ideally the system should provide different replication parameters (sync/async, number of replicas) as a configurable setting.
+
+\subsection*{Multi-datacenter support}
+
+Usually network partitioning events occur when the data storage is deployed in several datacenters (single DC configurations are less likely to experience partitions because of redundant network links). 
+Therefore we would like to test only the systems, which claims to support multi-datacenter deployment scenarios.
+
+% Having a driver/connector for Clojure
+% The main research that we are trying to continue its way, have implemented its different scenarios by using Clojure, so a Clojure driver/connector helps us significantly by letting us to maintain experiment condition exactly like prior experiment and being sure about test conditions.
+
+\section{Selected candidate storage systems}
+\label{sec:candidates}
+
+\subsection*{Hazelcast}
+Hazelcast is distributed highly scalable in-memory grid, providing distributed access to the typical data structures (Maps, Queues, Lists, Sets) partitioned across the cluster. 
+Hazelcast is peer-to-peer system without any single point of failure problem.
+
+It supports multi-datacenter configuration via WANReplication feature with active-active and active-passive replication configurations.
+
+Hazelcast also allows user to pick how many replicas maintain across the cluster and what conflict resolution strategy to use, in the case of conflicting entries.  
+
+\subsection*{Couchbase}
+
+Couchbase is a distributed scalable document-oriented database, which runs on shared-nothing clusters.
+In terms of CAP theorem Couchbase is a typical CP system.
+
+Couchbase has various replication settings.
+It supports peer-to-peer and master-slave replication scenarios, moreover it features cross datacenter (XDCR) replication.
+Couchbase replication is completely configurable and th user can balance between resource utilization and resource availability, by adjusting number of replicas.
+
+Couchbase has various connectors and drivers for different programming languages and development platforms. 
+Two of the connectors that could be useful for us are Spyglass and Clouchbase. 
+Spyglass is a Clojure wrapper for spymemcached, which is compatible with Couchbase, clutchbase is a Clojure wrapper for the Couchbase Java Client.
+
+\subsection*{RethinkDB}
+
+RethinkDB is a distributed system, created for scalable and effective storing, retrieving and processing JSON documents.
+It provides user with simple programming model, yet supports sophisticated features like indexing, query language, table joins and group by aggregation operations.
+
+RethinkDB supports multi-datacenter deployments and allows to adjust replication settings on per-datacenter basis.
+Replication settings allows to control the total number of replicas for each table and the number acknowledgments, required to be confirmed before write is considered to be done (i.e. sync replicas).
+
+RethinkDB claims to be an immediately consistent data storage (unlike the eventually consistent DBs like Dynamo), which allows us to call it CP system.
+
+\section{Other candidate storage systems}
+\label{sec:others}
+Besides these three systems, we investigated a number of different other potential candidates.
+We are not considering systems, for which network partitioning tests were already performed.
+Instead we are trying to focus on other candidates.
+Both on them are described in Table \ref{tab:cacndidates}.
+
+\begin{table}
+	\centering
+	\begin{tabular}{|c|c|}
+		\hline
+		\rowcolor{light-gray} \textbf{Studied systems} & \textbf{Potential candidates} \\ \hline
+		CouchDB & Voldemort  \\ \hline
+		MongoDB & ActiveMQ  \\ \hline
+		Cassandra & Hbase  \\ \hline
+		Riak & Hypertable  \\ \hline
+		PostgreSQL & OrientDB  \\ \hline
+		Redis & Mnesia  \\ \hline
+		Zookeeper & Neo4J  \\ \hline
+	\end{tabular}
+	\caption{Other distributed storage systems}
+	\label{tab:cacndidates}
+\end{table}
+
+We may as well pick one of the potential candidates in exchange to currently selected distributed database, based on the difficulties, that we might encounter while deploying or configuring one of those systems.
+
+\section*{Contribution}
+
+\begin{table}[hb]
+	\centering
+	\begin{tabular}{|c|c|}
+		\hline
+		\rowcolor{light-gray} \textbf{Contributor} & \textbf{Studied system} \\ \hline
+		Ildar & Hazelcast  \\ \hline
+		Lonxiang & RathinkDB  \\ \hline
+		Ali & Couchbase  \\ \hline
+	\end{tabular}
+\end{table}
+
+\end{document}
