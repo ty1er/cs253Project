@@ -113,6 +113,21 @@ Both on them are described in Table \ref{tab:cacndidates}.
 
 We may as well pick one of the potential candidates in exchange to currently selected distributed database, based on the difficulties, that we might encounter while deploying or configuring one of those systems.
 
+\section{Experiment environment setup}
+
+In order to do the experimental part of our project we planning to setup a mini cluster, consisting of 5 virtual machines.
+Distributed storage systems, described in earlier sections would be deployed on each virtual node along with the small program, writing some test data on each node (emulating typical user behavior) and the set of scripts, emulating network partitioning.
+
+VMs could be hosted either in cloud environment (like EC2) or locally (current implementation).
+Hosting virtual machines on a single physical node will not be a major issue, since physical resources are not the bottleneck in our experiments.
+
+\section{Expected experimental results}
+
+The expected outcome of our experiments for each system would be the set of following numbers: \% of the acknowledged writes (writes that were reported to be successful during network partition), \% of dropped writes (writes that were reported to be successful, but disappeared after the partition heals) and \% of unacknowledged writes (writes that were not successful, but are persisted even after the partition heals).
+Since mostly we are examining CP systems we would be able to derive conclusion about overall durability of these systems.
+
+Another possible experiment would study the same characteristics in the case when network packet RTT is artificially increased (emulating slow network).  
+
 \section*{Contribution}
 
 \begin{table}[hb]
