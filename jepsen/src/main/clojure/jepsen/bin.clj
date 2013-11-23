@@ -11,6 +11,7 @@
                             riak-crdt-app]]
         jepsen.mongo
         jepsen.redis
+        jepsen.hazelcast 
         [jepsen.pg    :only [pg-app]]
         [jepsen.nuodb :only [nuodb-app]]
         [jepsen.zk    :only [zk-app]]
@@ -37,7 +38,8 @@
    "pg"                     pg-app
    "nuodb"                  nuodb-app
    "zk"                     zk-app
-   "lock"                   locking-app})
+   "lock"                   locking-app
+   "hazelcast"              hazelcast-app})
 
 (def failures
   "A map from command-line names to failure modes."
@@ -79,5 +81,5 @@
 
     (catch Throwable t
       (.printStackTrace t)
-      ;       (clojure.stacktrace/print-cause-trace t)
+             (clojure.stacktrace/print-cause-trace t)
       (System/exit 1))))
