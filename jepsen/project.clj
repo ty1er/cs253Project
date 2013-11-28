@@ -19,7 +19,8 @@
                             :exclusions [com.datastax.cassandra/cassandra-driver-core]]
                            [com.datastax.cassandra/cassandra-driver-core "1.0.3"]
                            [byte-streams "0.1.4"]
-                           [org.clojure/math.combinatorics "0.0.4"]]
+                           [org.clojure/math.combinatorics "0.0.4"]
+                           [com.hazelcast/hazelcast-client "3.1.2"]]
             :java-source-paths ["src/main/java"] 
             :profiles {:dev {:dependencies [[midje "1.5.0"]]}}
             :main jepsen.bin

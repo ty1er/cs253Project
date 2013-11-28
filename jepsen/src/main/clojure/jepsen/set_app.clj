@@ -26,8 +26,8 @@
     (teardown [this]         (locking global-lock (teardown app)))))
 
 (def nodes
-;  ["n1" "n2" "n3" "n4" "n5"])
-["n1"])
+  ["n1" "n2" "n3" "n4" "n5"])
+;["n1"])
 
 (def partitions
   [#{"n1" "n2"}

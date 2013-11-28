@@ -6,22 +6,22 @@
 (defn slow
   "Slows down the network."
   []
-  (exec :tc :qdisc :add :dev :eth0 :root :netem :delay :50ms :10ms :distribution :normal))
+  (exec :tc :qdisc :add :dev :eth4 :root :netem :delay :50ms :10ms :distribution :normal))
 
 (defn flaky
   "Drops packets."
   []
-  (exec :tc :qdisc :add :dev :eth0 :root :netem :loss "20%" "75%"))
+  (exec :tc :qdisc :add :dev :eth4 :root :netem :loss "20%" "75%"))
 
 (defn fast
   "Fixes network."
   []
-  (exec :tc :qdisc :del :dev :eth0 :root))
+  (exec :tc :qdisc :del :dev :eth4 :root))
 
 (defn ip
   "Look up an ip for a hostname"
   [host]
-  (exec :dig :+short host))
+  (exec :getent :hosts host :|awk "{print $1}"))
 
 (defn cut-random-link
   "Cuts a random link to any of nodes."

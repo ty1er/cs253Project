@@ -5,27 +5,37 @@
     jepsen.set-app
     jepsen.load)
   (:import
-    [edu.ucr.cs.jepsen]))
+    [edu.ucr.cs.jepsen]
+    [java.util]
+    [System.out]))
 
-(defn noop 
-  "Nooping"
-  []
-  (.writeToMap (new edu.ucr.cs.jepsen.HazelcastApp)))
+;(defn noop 
+;  "Nooping"
+;  []
+;  (.print hz-app))
 
 (defn hazelcast-app
   "Description"
   [opts]
-  (let [test-map "map"]
+  (let [host (get opts :host)
+        hosts (hash-map "n1" 1, "n2" 2, "n3" 1, "n4" 2, "n5" 2)
+        key (get opts :key "test")
+        hz-app (new edu.ucr.cs.jepsen.HazelcastApp host hosts)
+;        sync-set (get opts :set "syncSet")]
+        sync-map (get opts :map "asyncMap")]
     (reify SetApp
       (setup [app]
-        (teardown app))
+        (.initMap hz-app sync-map)
+        (.clearMap hz-app))
 
       (add [app element]
         
-          (noop) ok)
+          (.writeToMap hz-app element element) ok)
+;(.println (System/out) element) ok)
 
       (results [app]
-        (noop))
+        (.readKeysFromMap hz-app))
 
       (teardown [app]
-        (noop)))))
+;        (.clearMap hz-app)
+        ))))
