@@ -39,7 +39,35 @@
    "nuodb"                  nuodb-app
    "zk"                     zk-app
    "lock"                   locking-app
-   "hazelcast"              hazelcast-app})
+   "hazelcast-syncMap-repl2" hazelcast-syncMap-repl2-app
+   "hazelcast-syncMap-repl3" hazelcast-syncMap-repl3-app
+   "hazelcast-asyncMap-repl2" hazelcast-asyncMap-repl2-app
+   "hazelcast-asyncMap-repl3" hazelcast-asyncMap-repl3-app
+   "hazelcast-mixedMap-repl2" hazelcast-mixedMap-repl2-app
+   "hazelcast-mixedMap-repl3" hazelcast-mixedMap-repl3-app
+   "hazelcast-mixedMap-repl33" hazelcast-mixedMap-repl33-app
+   "hazelcast-syncSet-repl2" hazelcast-syncSet-repl2-app
+   "hazelcast-syncSet-repl3" hazelcast-syncSet-repl3-app
+   "hazelcast-asyncSet-repl2" hazelcast-asyncSet-repl2-app
+   "hazelcast-asyncSet-repl3" hazelcast-asyncSet-repl3-app
+   "hazelcast-mixedSet-repl2" hazelcast-mixedSet-repl2-app
+   "hazelcast-mixedSet-repl3" hazelcast-mixedSet-repl3-app
+   "hazelcast-mixedSet-repl33" hazelcast-mixedSet-repl33-app
+   "hazelcast-syncList-repl2" hazelcast-syncList-repl2-app
+   "hazelcast-syncList-repl3" hazelcast-syncList-repl3-app
+   "hazelcast-asyncList-repl2" hazelcast-asyncList-repl2-app
+   "hazelcast-asyncList-repl3" hazelcast-asyncList-repl3-app
+   "hazelcast-mixedList-repl2" hazelcast-mixedList-repl2-app
+   "hazelcast-mixedList-repl3" hazelcast-mixedList-repl3-app
+   "hazelcast-mixedList-repl33" hazelcast-mixedList-repl33-app
+   "hazelcast-syncQueue-repl2" hazelcast-syncQueue-repl2-app
+   "hazelcast-syncQueue-repl3" hazelcast-syncQueue-repl3-app
+   "hazelcast-asyncQueue-repl2" hazelcast-asyncQueue-repl2-app
+   "hazelcast-asyncQueue-repl3" hazelcast-asyncQueue-repl3-app
+   "hazelcast-mixedQueue-repl2" hazelcast-mixedQueue-repl2-app
+   "hazelcast-mixedQueue-repl3" hazelcast-mixedQueue-repl3-app
+   
+   })
 
 (def failures
   "A map from command-line names to failure modes."

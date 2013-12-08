@@ -20,7 +20,8 @@
   "Wraps an app with a perfect mutex."
   [app]
   (reify SetApp
-    (setup    [this]         (locking global-lock (setup app)))
+    (setup    [this]         (locking global-lock 
+                               (setup app)))
     (add      [this element] (locking global-lock (add app element)))
     (results  [this]         (locking global-lock (results app)))
     (teardown [this]         (locking global-lock (teardown app)))))

@@ -12,10 +12,10 @@
 	xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.1.xsd"
 	xmlns="http://www.hazelcast.com/schema/config" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<properties>
-		<property name="hazelcast.max.no.heartbeat.seconds">30</property>
+		<property name="hazelcast.max.no.heartbeat.seconds">3</property>
 		<property name="hazelcast.map.partition.count">5</property>
-		<property name="hazelcast.merge.first.run.delay.seconds">20</property>
-		<property name="hazelcast.merge.next.run.delay.seconds">15</property>
+		<property name="hazelcast.merge.first.run.delay.seconds">2</property>
+		<property name="hazelcast.merge.next.run.delay.seconds">1</property>
 	</properties>
 	<group>
 		<name>dev</name>
@@ -116,7 +116,44 @@
 
 		<empty-queue-ttl>-1</empty-queue-ttl>
 	</queue>
-	<map name="syncMap">
+	<queue name="syncQueue2">
+		<max-size>Integer.MAX_VALUE</max-size>
+		<backup-count>2</backup-count>
+		<async-backup-count>0</async-backup-count>
+		<empty-queue-ttl>-1</empty-queue-ttl>
+	</queue>
+	<queue name="syncQueue3">
+		<max-size>Integer.MAX_VALUE</max-size>
+		<backup-count>3</backup-count>
+		<async-backup-count>0</async-backup-count>
+		<empty-queue-ttl>-1</empty-queue-ttl>
+	</queue>
+	<queue name="asyncQueue2">
+		<max-size>Integer.MAX_VALUE</max-size>
+		<backup-count>0</backup-count>
+		<async-backup-count>2</async-backup-count>
+		<empty-queue-ttl>-1</empty-queue-ttl>
+	</queue>
+	<queue name="asyncQueue3">
+		<max-size>Integer.MAX_VALUE</max-size>
+		<backup-count>0</backup-count>
+		<async-backup-count>3</async-backup-count>
+		<empty-queue-ttl>-1</empty-queue-ttl>
+	</queue>
+	<queue name="mixedQueue2">
+		<max-size>Integer.MAX_VALUE</max-size>
+		<backup-count>2</backup-count>
+		<async-backup-count>1</async-backup-count>
+		<empty-queue-ttl>-1</empty-queue-ttl>
+	</queue>
+	<queue name="mixedQueue3">
+		<max-size>Integer.MAX_VALUE</max-size>
+		<backup-count>1</backup-count>
+		<async-backup-count>2</async-backup-count>
+		<empty-queue-ttl>-1</empty-queue-ttl>
+	</queue>
+	
+	<map name="syncMap2">
 		<!-- Data type that will be used for storing recordMap. Possible values: 
 			BINARY (default): keys and values will be stored as binary data OBJECT : 
 			values will be stored in their object forms OFFHEAP : values will be stored 
@@ -169,8 +206,20 @@
 <!--             <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy> -->
 <!--         </wan-replication-ref> -->
 	</map>
+	<map name="syncMap3">
+		<in-memory-format>BINARY</in-memory-format>
+		<backup-count>3</backup-count>
+		<read-backup-data>true</read-backup-data>
+		<async-backup-count>0</async-backup-count>
+		<time-to-live-seconds>0</time-to-live-seconds>
+		<max-idle-seconds>0</max-idle-seconds>
+		<eviction-policy>NONE</eviction-policy>
+		<max-size policy="PER_NODE">0</max-size>
+		<eviction-percentage>25</eviction-percentage>
+		<merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
+	</map>
 	
-	<map name="asyncMap">
+	<map name="asyncMap2">
 		<in-memory-format>BINARY</in-memory-format>
 		<backup-count>0</backup-count>
 		<async-backup-count>2</async-backup-count>
@@ -183,11 +232,50 @@
 		<merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy
 		</merge-policy>
 	</map>
+	<map name="asyncMap3">
+		<in-memory-format>BINARY</in-memory-format>
+		<backup-count>0</backup-count>
+		<async-backup-count>3</async-backup-count>
+		<read-backup-data>true</read-backup-data>
+		<time-to-live-seconds>0</time-to-live-seconds>
+		<max-idle-seconds>0</max-idle-seconds>
+		<eviction-policy>NONE</eviction-policy>
+		<max-size policy="PER_NODE">0</max-size>
+		<eviction-percentage>25</eviction-percentage>
+		<merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy
+		</merge-policy>
+	</map>
 	
-	<map name="mixedMap">
+	<map name="mixedMap2">
 		<in-memory-format>BINARY</in-memory-format>
 		<backup-count>1</backup-count>
 		<async-backup-count>1</async-backup-count>
+		<read-backup-data>true</read-backup-data>
+		<time-to-live-seconds>0</time-to-live-seconds>
+		<max-idle-seconds>0</max-idle-seconds>
+		<eviction-policy>NONE</eviction-policy>
+		<max-size policy="PER_NODE">0</max-size>
+		<eviction-percentage>25</eviction-percentage>
+		<merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy
+		</merge-policy>
+	</map>
+	<map name="mixedMap3">
+		<in-memory-format>BINARY</in-memory-format>
+		<backup-count>2</backup-count>
+		<async-backup-count>1</async-backup-count>
+		<read-backup-data>true</read-backup-data>
+		<time-to-live-seconds>0</time-to-live-seconds>
+		<max-idle-seconds>0</max-idle-seconds>
+		<eviction-policy>NONE</eviction-policy>
+		<max-size policy="PER_NODE">0</max-size>
+		<eviction-percentage>25</eviction-percentage>
+		<merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy
+		</merge-policy>
+	</map>
+	<map name="mixedMap33">
+		<in-memory-format>BINARY</in-memory-format>
+		<backup-count>1</backup-count>
+		<async-backup-count>2</async-backup-count>
 		<read-backup-data>true</read-backup-data>
 		<time-to-live-seconds>0</time-to-live-seconds>
 		<max-idle-seconds>0</max-idle-seconds>
@@ -203,23 +291,75 @@
 		<value-collection-type>SET</value-collection-type>
 	</multimap>
 
-	<list name="default">
+	<list name="syncList2">
+		<backup-count>2</backup-count>
+		<async-backup-count>0</async-backup-count>
+		<read-backup-data>true</read-backup-data>
+	</list>
+	<list name="syncList3">
+		<backup-count>3</backup-count>
+		<async-backup-count>0</async-backup-count>
+		<read-backup-data>true</read-backup-data>
+	</list>
+	<list name="asyncList2">
+		<backup-count>0</backup-count>
+		<async-backup-count>2</async-backup-count>
+		<read-backup-data>true</read-backup-data>
+	</list>
+	<list name="asyncList3">
+		<backup-count>0</backup-count>
+		<async-backup-count>3</async-backup-count>
+		<read-backup-data>true</read-backup-data>
+	</list>
+	<list name="mixedList2">
 		<backup-count>1</backup-count>
+		<async-backup-count>1</async-backup-count>
+		<read-backup-data>true</read-backup-data>
+	</list>
+	<list name="mixedList3">
+		<backup-count>2</backup-count>
+		<async-backup-count>1</async-backup-count>
+		<read-backup-data>true</read-backup-data>
+	</list>
+	<list name="mixedList33">
+		<backup-count>1</backup-count>
+		<async-backup-count>2</async-backup-count>
+		<read-backup-data>true</read-backup-data>
 	</list>
 
-	<set name="syncSet">
-		<backup-count>1</backup-count>
+	<set name="syncSet2">
+		<backup-count>2</backup-count>
 		<async-backup-count>0</async-backup-count>
-		<read-backup-data>false</read-backup-data>
+		<read-backup-data>true</read-backup-data>
 	</set>
-	<set name="asyncSet">
+	<set name="syncSet3">
+		<backup-count>3</backup-count>
+		<async-backup-count>0</async-backup-count>
+		<read-backup-data>true</read-backup-data>
+	</set>
+	<set name="asyncSet2">
+		<backup-count>0</backup-count>
+		<async-backup-count>2</async-backup-count>
+		<read-backup-data>true</read-backup-data>
+	</set>
+	<set name="asyncSet3">
 		<backup-count>0</backup-count>
 		<async-backup-count>3</async-backup-count>
 		<read-backup-data>true</read-backup-data>
 	</set>
-	<set name="mixedSet">
+	<set name="mixedSet2">
 		<backup-count>1</backup-count>
 		<async-backup-count>1</async-backup-count>
+		<read-backup-data>true</read-backup-data>
+	</set>
+	<set name="mixedSet3">
+		<backup-count>2</backup-count>
+		<async-backup-count>1</async-backup-count>
+		<read-backup-data>true</read-backup-data>
+	</set>
+	<set name="mixedSet23">
+		<backup-count>1</backup-count>
+		<async-backup-count>2</async-backup-count>
 		<read-backup-data>true</read-backup-data>
 	</set>
 
@@ -229,11 +369,11 @@
 		<async-backup-count>0</async-backup-count>
 	</semaphore>
 	
-	<listeners>
-        <listener>edu.ucr.cs.jepsen.JepsenMembershipListener</listener>
-        <listener>edu.ucr.cs.jepsen.JepsenInstanceListener</listener>
-        <listener>edu.ucr.cs.jepsen.JepsenMigrationListener</listener>
-    </listeners>
+<!-- 	<listeners> -->
+<!--         <listener>edu.ucr.cs.jepsen.JepsenMembershipListener</listener> -->
+<!--         <listener>edu.ucr.cs.jepsen.JepsenInstanceListener</listener> -->
+<!--         <listener>edu.ucr.cs.jepsen.JepsenMigrationListener</listener> -->
+<!--     </listeners> -->
 
 	<serialization>
 		<portable-version>0</portable-version>
