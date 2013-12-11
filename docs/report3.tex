@@ -1,0 +1,163 @@
+\documentclass[a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{indentfirst}
+\usepackage[table]{xcolor}
+\usepackage{graphicx}
+
+\definecolor{light-gray}{gray}{0.9}
+
+\setlength{\textheight}{690pt}
+\setlength{\topmargin}{-0.3in}
+\setlength{\headsep}{0pt}
+\setlength{\oddsidemargin}{-6mm}
+\setlength{\textwidth}{7in}
+
+\title{CS 253: Project Report 2}
+\author{Ildar Absalyamov \and Longxiang Chen \and Ali Mohammadkhan}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+Building distributed applications is an intrinsically hard task.
+Most of the assumptions, which are legitimate for centralized systems, do not hold in distributed environments \cite{deutsch1992eight}.
+
+Considering the assumptions given in \cite{deutsch1992eight}, network partition, i.e. temporary violation of network connectivity, is indistinguishable from the simple node failure. 
+However, network partition is a topic of particular interest, since it is inherently connected with other vital properties of distributed systems \cite{brewer2000towards}.
+
+
+Surprisingly, limited number of experimental research has been done on distributed systems, when their networks have faced network partition challenges. 
+The goal of current project is to make a case study for different distributed storage systems, measuring how these systems would perform under the assumption of network partition in the cluster.
+
+
+\section{Related Work}
+
+In order to investigate how distributed systems perform in the case of network partitions as the first stage we need to pick storage systems, which we are going to test in our project.
+However a storage system should have certain characteristics, to make it suitable for our investigation. 
+In the Section \ref{sec:characteristic} we briefly describe these characteristics and according to them in Section \ref{sec:candidates} we introduce distributed systems, that we have chosen as candidates for our experiments.
+
+\section{Selected candidate storage systems}
+\label{sec:candidates}
+
+\subsection*{Hazelcast}
+Hazelcast is distributed highly scalable in-memory grid, providing distributed access to the typical data structures (Maps, Queues, Lists, Sets) partitioned across the cluster. 
+Hazelcast is peer-to-peer system without any single point of failure problem.
+
+It supports multi-datacenter configuration via WANReplication feature with active-active and active-passive replication configurations.
+
+Hazelcast also allows user to pick how many replicas maintain across the cluster and what conflict resolution strategy to use, in the case of conflicting entries.  
+
+\subsection*{Couchbase}
+
+Couchbase is a distributed scalable document-oriented database, which runs on shared-nothing clusters.
+In terms of CAP theorem Couchbase is a typical CP system.
+
+Couchbase has various replication settings.
+It supports peer-to-peer and master-slave replication scenarios, moreover it features cross datacenter (XDCR) replication.
+Couchbase replication is completely configurable and th user can balance between resource utilization and resource availability, by adjusting number of replicas.
+
+Couchbase has various connectors and drivers for different programming languages and development platforms. 
+Two of the connectors that could be useful for us are Spyglass and Clouchbase. 
+Spyglass is a Clojure wrapper for spymemcached, which is compatible with Couchbase, clutchbase is a Clojure wrapper for the Couchbase Java Client.
+
+\subsection*{Voldemort}
+
+Voldemort is a distributed key-value storage system, providing tunable consistency (strict quorum or eventual consistency). It is used in LinkedIn for certain 
+high-scalability storage problems where simple functional partitioning is not sufficient. 
+
+Voldemort combines in memory caching with the storage system so that a separate caching tier is not required. Unlike MySQL replication, the reads and writes scale horizontally. It also allows cluster expansion without rebalancing all data.
+
+Voldemort provides simple API for data replication and placement, which makes it easy to accommondate a wide range of application specific strategies.
+
+\section{Design}
+
+\section{Implementation}
+
+
+
+\section{Evaluation}
+
+These tests are similar in all three candidate storage systems in essence, but due to the specific characteristics of each systems the details could differ. 
+For instance, some storage systems have peer-to-peer nature while the others have master-slave architecture, each of these categories needs different test scenarios to be able to carry out comprehensive tests.
+
+Our setup consists of five virtual machines, with Ubuntu Linux installed on all of them along with the considered data storage system. 
+These five nodes are connected into a single virtual network, which is located behind a NAT separating it from the host system.
+To be able to communicate with the individual nodes of the storage system, we implemented a small client application which was running on a host system, whose requests were routed through the NAT to designated cluster nodes. 
+Overall configuration in shown on Figure \ref{fig:cluster}. 
+
+In order to simulate the network partition in this cluster and disconnect nodes N1 and N2 from nodes N3,N4,N5 we configuring iptables firewall on each cluster node to drop packets, received from the partitioned part of the cluster.
+Note that the host system is always connected to the cluster nodes, so the partition exists only form the node's point of view.
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{cluster}
+	\caption{Virtual cluster}
+	\label{fig:cluster}
+\end{figure}
+
+\section{Experiment results}
+
+\subsection{Hazelcast}
+
+For the set of experiments cluster of hazelcast version 3.1 was deployed on the worker nodes. 
+We have tested two types of configuration: local cluster and several clusters with WAN replication, each of which was declaring a single distributed map, which was written from the individual worker node.
+
+Tests for the local cluster reveled that out of 2000 writes almost 10\% are lost (result depends on the length of the period, during with the partition was present).
+Results show that every record, written on the smaller partition (nodes N1 and N2) is lost, even after partition disappears, which clearly shows the issue with distributed consensus algorithm, used in Hazelcast.
+Also it could be noted that when the partition is resolved latency of writes, going to nodes N1 and N2 temporarily increases, which could be explained by the fact that the tuples on these nodes should migrated, when they are rejoining the cluster.
+
+On the other hand configuration, which used WAN replication perfectly survived the network partition, returning all 2000 successfully written tuples.
+
+\subsection{Couchbase}
+
+In our experiments we have used Couchbase 2.1.1 (which is the latest available Community edition version).
+
+Since Couchbase is a peer-to-peer system, there is no need to manually set up master node. Servers obtain their configuration from each other in p2p way.
+
+To start testing and checking the configuration we wrote and read 1000 tuples to Couchbase system and all of them were successful. 
+The data is distributed approximately even among different servers (each server has about 200 tuples) and one replication from each tuple is stored on another server. 
+Then we turned off one of the servers. It resulted to loosing about 20\% of our writes, in other words, just 803 data tuples were written on Couchbase database and the client was in an attempting loop to write other data tuples to 5th server, which it was never successful, but if we turn the 5th server after writing the data and do the failover over process we can successfully read 1000 written tuples because of provided replication in Couchbase system.
+
+For the network partition tests, all 1000 writes were successful, and then we read the data and all 1000 read were successful too, but as you can see in Figure \ref{fig:partition1} and Figure \ref{fig:partition2}\, the number of replicas are reduced in comparison to prior test, so we designed the next test.
+
+In this test, after writing the 1000 tuples in partitioned mode, we turned off the N5 server and we did the fail over process manually, this time we just were able to read 850 data tuples out of 1000 written tuples in first place. It shows that the replication policy of Couchbase was not successful in presence of network partition. 
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{partition1}
+	\caption{1000 tuples writing process form the view of N1-N2}
+	\label{fig:partition1}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{partition2}
+	\caption{1000 tuples writing process form the view of N3-N5}
+	\label{fig:partition2}
+\end{figure}
+
+\subsection{Voldemort}
+
+In the beginning, we proposed to use RethinkDB as a third storage system, that we would like to evaluate. But this database is not well documented because it is a new system that few people use it. So it would be hard to configure RethinkDB to support multi-datacenter replca set.
+
+Our backup option was to use Voldemort distributed key-value storage and configure it for replica set support. Different from the previous two database systems, Voldemort is a Availability-Partition Tolerant(AP) system. 
+
+
+\section{Future Work}
+
+\section*{Contribution}
+
+\begin{table}[hb]
+	\centering
+	\begin{tabular}{|c|c|}
+		\hline
+		\rowcolor{light-gray} \textbf{Contributor} & \textbf{Experiments} \\ \hline
+		Ildar & Hazelcast  \\ \hline
+		Lonxiang & Voldemort  \\ \hline
+		Ali & Couchbase  \\ \hline
+	\end{tabular}
+\end{table}
+
+\end{document}
