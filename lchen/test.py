@@ -3,13 +3,13 @@ from time import sleep
 from voldemort import StoreClient
 
 def write():
-    c = StoreClient('test', [('localhost', 6666)])
+    c = StoreClient('test', [('n1', 6666)])
     for k in range(1, 501, 5):
         c.put(str(k), str(datetime.datetime.now()));
     return True
 
 def read():
-    c = StoreClient('test', [('localhost', 6666)])
+    c = StoreClient('test', [('n1', 6666)])
     missing = []
     for k in range(1, 501):
         val = c.get(str(k))
