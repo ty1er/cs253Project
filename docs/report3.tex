@@ -1,19 +1,22 @@
 \documentclass[a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage{indentfirst}
+\usepackage{biblatex}
 \usepackage[table]{xcolor}
 \usepackage{graphicx}
 
 \definecolor{light-gray}{gray}{0.9}
 
-\setlength{\textheight}{690pt}
-\setlength{\topmargin}{-0.3in}
-\setlength{\headsep}{0pt}
-\setlength{\oddsidemargin}{-6mm}
-\setlength{\textwidth}{7in}
+% \setlength{\textheight}{690pt}
+% \setlength{\topmargin}{-0.3in}
+% \setlength{\headsep}{0pt}
+% \setlength{\oddsidemargin}{-6mm}
+% \setlength{\textwidth}{7in}
 
-\title{CS 253: Project Report 2}
+\title{CS 253: Final Project Report}
 \author{Ildar Absalyamov \and Longxiang Chen \and Ali Mohammadkhan}
+
+\addbibresource{references.bib}
 
 \begin{document}
 
@@ -21,13 +24,32 @@
 
 \section{Introduction}
 
-Building distributed applications is an intrinsically hard task.
-Most of the assumptions, which are legitimate for centralized systems, do not hold in distributed environments \cite{deutsch1992eight}.
+The Internet and computer networks were initially designed with the idea that equipment, carrying individual packets, is faulty and unreliable.
+This premise heavily influenced on the implementation of OSI reference model.
+Transport layer protocols of this model (TCP as the most popular) provides users with the abstraction of reliable transferring of data packets, however the implementation of this interface is build on top of noisy, volatile and inherently unreliable network \cite{deutsch1992eight}.
+In the network packets could be sporadically dropped, delayed, duplicated and reordered.
 
-Considering the assumptions given in \cite{deutsch1992eight}, network partition, i.e. temporary violation of network connectivity, is indistinguishable from the simple node failure. 
-However, network partition is a topic of particular interest, since it is inherently connected with other vital properties of distributed systems \cite{brewer2000towards}.
+To maintain this abstraction TCP implements an algorithm to ensure reliability properties, but it comes with the cost of increased transmission latency.
+Basically, that means that any operation on the client is blocked, until it will receive an acknowledgment, that the transmission was delivered successfully. 
+In particularly noisy networks there is no any guarantee that this acknowledgment would be received at all, so theoretically client could wait forever.
+In practice clients usually have some reasonable timeouts, which are used to determine whether the transmission has succeed or not.
 
+In the following work we will be focused on particular type of network failure, called partition.
+Network partition is failure in which a topology is divided into two (or more) parts, which are separated from each other.
+Nodes inside each partition are able to communicate with each other, but they cannot reach servers in the other partitions.
 
+The probability of network partitioning depends on the topology of the network, which in the worst case could be connected through one (or small group) of nodes.
+Crash of these nodes would lead to violation of network connectivity.
+
+Partitioning is a big issue for Internet traffic, where there is no way to determine the whole topology of the network.
+For a long time it was considered that the partitions inside the data centers occur extremely rarely, however data collected from the companies like Google, Amazon, etc, which run tens of data centers around the world, shows ???? that even with high intra-datacenter redundancy partitions still could emerge.
+Or course the time, during with network is partitioned, is minuscule in comparison with the uptime of servers, but for distributed applications working under the high load (which are usually deployed in these data centers) even slight failure could cause a lot of troubles.
+Loss of communication, happened due to network failure, could cause local copies of the data to diverge.
+If the application is not aware of partitioning it could end up with incorrect state, after the network connectivity is restored.
+What is even worse, is that the application never be sure, whether a request, failed due to partitioning error, will never be processed . 
+The failure could be caused by network timeout, which, in the case of a slow network, does not imply that the original request will not arrive later.
+
+In distributed setup partitioning is the inherently connected with other properties of distributed systems like availability and consistency \cite{brewer2000towards}.
 Surprisingly, limited number of experimental research has been done on distributed systems, when their networks have faced network partition challenges. 
 The goal of current project is to make a case study for different distributed storage systems, measuring how these systems would perform under the assumption of network partition in the cluster.
 
@@ -167,7 +189,7 @@ At the first stage, we opened only two nodes (N1-N2), then all write operations 
 
 \section*{Contribution}
 
-\begin{table}[hb]
+\begin{table}[h]
 	\centering
 	\begin{tabular}{|c|c|}
 		\hline
@@ -177,5 +199,7 @@ At the first stage, we opened only two nodes (N1-N2), then all write operations 
 		Ali & Couchbase  \\ \hline
 	\end{tabular}
 \end{table}
+
+\printbibliography
 
 \end{document}
