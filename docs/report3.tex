@@ -255,9 +255,18 @@ vary significantly.
 For the AP systems (Voldemort), the availability is pretty good, almost all the writes are succesful eventually, with a failure rate around 5/2000 = 0.25\%.
 Exceptions does not indicate 100\% write failure, rather it does say that we do not know where the objects are.
 
+To sum up, designers and developers of distributed storage systems have not considered the devastating effects of network partition as much as needed.
+Maybe they have trusted too much to network infrastructure which is not a wise decision because network is unreliable in its nature.
+We think that distributed storage community deeply needs to reconsider its procedure against network partition.
+If not, storage systems will not be enough consistent and reliable for enterprise users.
+
+
 \section{Future Work}
-In this paper we investigated the network partition problem in three different distributed storage systems, but we did not implement any solution to mitigate or solve the problem of network partition in these systems. A partition aware script along with these systems can reduce the impact of this problem before being addressed by developer of these systems.
-In addition, various distributed storage systems exist and lots of them are not robust in network partition situations, but no one has investigated these systems under network partition condition, it seems good to have these systems tested and inform the user of these systems about probable shortages of these systems under network partition.
+In this paper we investigated the network partition problem in three different distributed storage systems, but we did not implement any solution to mitigate or solve the problem of network partition in these systems. 
+A partition aware script along with these systems can reduce the impact of this problem before being addressed by developer of these systems.
+In addition, various distributed storage systems exist and lots of them are not robust in network partition situations.
+Just few of these storage systems are investigated under network partition condition.
+It seems useful to have these systems tested and inform the user of these systems about probable shortages of these systems under network partition.
 
 
 \section*{Contribution}
