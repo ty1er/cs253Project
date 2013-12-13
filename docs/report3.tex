@@ -60,6 +60,8 @@ In order to investigate how distributed systems perform in the case of network p
 However a storage system should have certain characteristics, to make it suitable for our investigation. 
 In the Section \ref{sec:characteristic} we briefly describe these characteristics and according to them in Section \ref{sec:candidates} we introduce distributed systems, that we have chosen as candidates for our experiments.
 
+{\bf To be completed...}
+
 \section{Selected candidate storage systems}
 \label{sec:candidates}
 
@@ -95,6 +97,8 @@ Voldemort provides simple API for data replication and placement, which makes it
 
 \section{Design}
 
+{\bf To be completed...}
+
 \section{Implementation}
 
 These tests are similar in all three candidate storage systems in essence, but due to the specific characteristics of each systems the details could differ. 
@@ -128,7 +132,7 @@ Also it could be noted that when the partition is resolved latency of writes, go
 
 On the other hand configuration, which used WAN replication perfectly survived the network partition, returning all 2000 successfully written tuples.
 
-{\bf To be continued...}
+{\bf To be completed...}
 
 \subsection{Couchbase}
 
@@ -158,7 +162,7 @@ In this test, after writing the 1000 tuples in partitioned mode, we turned off t
 	\label{fig:partition2}
 \end{figure}
 
-{\bf To be continued...}
+{\bf To be completed...}
 
 \subsection{Voldemort}
 
@@ -172,11 +176,11 @@ We set the quorum factor as following:
   \centering
   \begin{tabular}{|c|c|c|}
     \hline
-    replication factor (N) & 5 & The final number of replications in the system. \\
+    replication (N) & 5 & Final number of replications in the system. \\
     \hline
-    required-writes (W) & 3 & The least number of writes without throwing an exception. \\
+    required-write (W) & 3 & Least number of writes w/o throwing an exception. \\
     \hline
-    required-reads (R) & 3 & The least number of reads without throwing an exception. \\
+    required-read (R) & 3 & Least number of reads w/o throwing an exception. \\
     \hline
   \end{tabular}
 \end{table}
@@ -191,8 +195,7 @@ The next step was to test the five nodes with network partitions as menetioned b
   \item Start running Voldemort in 5 VMs, 5 clinets keep writing distinguished data to their correspoding nodes.
   \item Use iptables to create a network partition between N1/N2 and N3/N4/N5 for a while(20 sec.), the clients keep writing data.
   \item Remove the blocking IPs from iptables' list (network recovered), before all writes are done.
-  \item As soon as all writes in one node is done, the client check the data in its node independently.
-  \item Wait for several seconds, recheck the data in each node.
+  \item After all writes in one node is done, each client check the data in its node independently.
 \end{enumerate}
 
 {\bf Results}
@@ -200,13 +203,30 @@ The next step was to test the five nodes with network partitions as menetioned b
 \begin{enumerate}
   \item Nothing happens, Voldemore does not return anything if the write/read is successfully.
   \item After network partition starts, clients of N1 and N2 receive exceptions because the required-write (W = 3) cannot meet. N3/N4/N5 keep the same as the above. 
-  \item All nodes go back the result 1 as the network partition is removed.
-  \item ...
-  \item DUring thier period, each node is exchanging thier data for replicas. Then all nodes have a whole replications of all data, which meets the eventual consistency.
+  \item All nodes go back to result 1 as the network partition is removed.
+  \item Finaly, each node finishes exchanging their data for replicas. Then all nodes have a final replications (N = 5) of all data objects.
 \end{enumerate}
 
+In the final set of all data, there are some objects missing. Based on the first stage, we found that Voldemort could handle writes when the node writting to is down. 
+And the performance of this ``Hinted Handoff'' technique may depend on the number of objects to be temporarily stored. During the period of network partition (20 seconds), 
+if the number of writes with exceptions is not large (1 write/second, 20 writes in total), Voldemort is able to handle all of them after network partition is removed. 
+Howerve, if the number of failed writes is large (10 writes/second, 200 in total), Voldemort would drop some of the objects, so there will be some objects missing in the end. 
+In both cases, the number of exceptions the clients received is larger than the number of missing objects. The objects to write are failed to meet
+the required-write (W = 5), so Voldemort throws an exception. However, the ``Hinted Handoff'' technique can store some (may not all) of the failed objects, then write back to
+the recovered nodes. This may result in a higher number of exceptions than missing objects in the end.
+
+\subsection{Conclusions}
+
+{\bf To be completed...}
+
+For the two CP systems (Hazelcast and Couchbase) we tested, they does not guarantee strong consistency. In different test cases or configurations, the performance of CP systems
+vary significantly.
+For the AP systems (Voldemort), the availability is pretty good, almost all the writes are succesful eventually, with a failure rate around 5/2000 = 0.25\%.
+Exceptions does not indicate 100\% write failure, rather it does say that we do not know where the objects are.
 
 \section{Future Work}
+
+{\bf To be completed...}
 
 \section*{Contribution}
 
