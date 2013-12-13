@@ -4,6 +4,7 @@
 \usepackage{biblatex}
 \usepackage[table]{xcolor}
 \usepackage{graphicx}
+\usepackage[left=2.5cm,top=3cm,right=2.5cm,bottom=3cm,bindingoffset=0.5cm]{geometry}
 
 \definecolor{light-gray}{gray}{0.9}
 
@@ -53,8 +54,33 @@ In distributed setup partitioning is the inherently connected with other propert
 Surprisingly, limited number of experimental research has been done on distributed systems, when their networks have faced network partition challenges. 
 The goal of current project is to make a case study for different distributed storage systems, measuring how these systems would perform under the assumption of network partition in the cluster.
 
-
 \section{Related Work}
+
+Although, it might seem that research in a area of distributed systems was actively done only during past decade, this fields captured an attention of academia long time before.
+
+The seminal paper by Davidson et al. \cite{Davidson:1985:CPN:5505.5508} already was describing the properties of distributed systems with replicated data, working in partitioned networks.
+This work was the first, discussing the trade-of between consistency and availability in a case of lack of network connectivity.
+However it was assuming that modifications are executed in transactional context, thereby allowing only strong linearizable consistency guarantees.
+This approach was proved to be non-scalable in real distributed setup.
+
+Later work by Fox et al. \cite{fox1997cluster} discussed possible ways to relax consistency guarantees in order to maintain reasonable performance for application with data intensive workload. 
+It was first to propose BASE (basically available, soft state, eventual consistency) semantics instead for known ACID (atomicity, consistency, isolation, durability) transaction, which were implemented in database system for decades.
+
+The following work by Brewer \cite{brewer2000towards} synthesized all existing research in a form of famous CAP-theorem, which was alter formally proved by Gilbert et al. \cite{gilbert2002brewer}.
+CAP-theorem establishes inherent relationship between availability and consistency properties of distributed system, working in partitioned networks, and formulates theoretical bound (in terms of maintained properties) for any of such systems.
+
+All these works led to rise and proliferation of the whole new type of database system, called NoSQL storages \cite{strauch2011nosql}.
+This name consolidates a set of diverse distributed storage systems. 
+Implementation and basic principles of these systems vary considerably, from dynamically scalable systems with identical nodes and ring-like structure \cite{decandia2007dynamo} to systems with structured data model and implicit distinction between masters and slaves in the cluster \cite{chang2008bigtable}.
+
+Experimental evaluation of these heterogeneous systems, emerging every so often, quickly became a big issue.
+Albeit CAP-theorem bounds the functionality of these systems it given only a theoretical upper bound.
+The real implementation could claim to maintain certain characteristics, like consistency and availability.
+But in reality in border situations, like slow network, dropping part of packets or temporary network partition, it could demonstrate completely different behavior, violating proclaimed guarantees.
+
+Only recently these emerged a work \cite{jepsen}, which tried to create an evaluation framework for measuring systems behavior under assumption that network is partitioned.
+Some popular distributed data storages like Cassandra \cite{lakshman2010cassandra}, MongoDB \cite{mongo}, Redis \cite{redis}, Riak \cite{riak}, etc were used in this study.
+The following work presents a case study, that tries to follow the same approach, for performance evaluation of various distributed databases.
 
 {\bf To be completed...}
 As far as we know, no network partition experiments are done on selected storage systems and we are the first who has done it, but we can separate related works to two different categories. Firstly, in part 2.1, we briefly express the experiments done on other storage systems under the network partition, then in part 2.2 we briefly introduce few of the experiments done on selected storage systems. These experiments aimed other aspects of selected storage systems likes their performance, or their fault tolerance when a node failure happens.
