@@ -174,15 +174,36 @@ We set the quorum factor as following:
     \hline
     replication factor (N) & 5 & The final number of replications in the system. \\
     \hline
-    required-writes (W) & 3 & The least number of writes that can succeed without throwing an exception. \\
+    required-writes (W) & 3 & The least number of writes without throwing an exception. \\
     \hline
-    required-reads (R) & 3 & The least number of reads that can succeed without throwing an exception. \\
+    required-reads (R) & 3 & The least number of reads without throwing an exception. \\
     \hline
   \end{tabular}
 \end{table}
 
 At the first stage, we opened only two nodes (N1-N2), then all write operations received exception, indicating that the write was failed. Because the W = 3, so the database system throws an exception back to the client. When we set up the third node (N3) to meet the least number of nodes for required-writes and required-reads, the client was able to read the objects we wrote before, even we had received exceptions. Voldemort is implemented with ``Hinted Handoff'' technique, which can reach eventual consistency. During writes, if the destination nodes are down, Voldemort stores a ``hint'' of the updated value on one of the alive node. As soon as the down nodes are alive again, the ``hints'' will be pushed to them. Based on this technique, Voldemort can keep the data consistent even when the required-writes cannot meet.
 
+The next step was to test the five nodes with network partitions as menetioned before. 
+
+{\bf Steps:}
+
+\begin{enumerate}
+  \item Start running Voldemort in 5 VMs, 5 clinets keep writing distinguished data to their correspoding nodes.
+  \item Use iptables to create a network partition between N1/N2 and N3/N4/N5 for a while(20 sec.), the clients keep writing data.
+  \item Remove the blocking IPs from iptables' list (network recovered), before all writes are done.
+  \item As soon as all writes in one node is done, the client check the data in its node independently.
+  \item Wait for several seconds, recheck the data in each node.
+\end{enumerate}
+
+{\bf Results}
+
+\begin{enumerate}
+  \item Nothing happens, Voldemore does not return anything if the write/read is successfully.
+  \item After network partition starts, clients of N1 and N2 receive exceptions because the required-write (W = 3) cannot meet. N3/N4/N5 keep the same as the above. 
+  \item All nodes go back the result 1 as the network partition is removed.
+  \item ...
+  \item DUring thier period, each node is exchanging thier data for replicas. Then all nodes have a whole replications of all data, which meets the eventual consistency.
+\end{enumerate}
 
 
 \section{Future Work}
