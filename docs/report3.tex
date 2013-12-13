@@ -57,15 +57,7 @@ The goal of current project is to make a case study for different distributed st
 \section{Related Work}
 
 {\bf To be completed...}
-As far as we know, no network partition experiments are done on selected storage systems and we are the first who has done it, but we can separate related works to two different categories. Firstly, in part 2.1, we briefly express the experiments done on other storage systems under the network partition, then in part 2.2 we briefly introduce few of the experiments done on selected storage systems. These experiments aimed other aspects of selected storage systems likes their performance, or their fault tolerance when a node failure happens.
 
-
-\subsection{Experiments done on other storage systems under network partition}
-
-\subsection{Other type of experiments done on selected storage systems}
-\subsubsection*{Related experiments on Hazelcast}
-\subsubsection*{Related experiments on Voldemort}
-\subsubsection*{Related experiments on Couchbase}
 
 
 \section{Selected storage systems}
@@ -82,11 +74,17 @@ Hazelcast also allows user to pick how many replicas maintain across the cluster
 \subsection*{Couchbase}
 
 Couchbase is a distributed scalable document-oriented database, which runs on shared-nothing clusters.
-In terms of CAP theorem Couchbase is a typical CP system which means that it sacrifices availability for keeping stored data consistent, but it has a failover option which it changes its behavior dramatically, to be able to explain about this feature, at first we briefly talk about Couchbase architecture and VBucket concept, then we describe the failover option and finally we explain what is balancing in Couchbase and why it is necessary.
+In terms of CAP theorem Couchbase is a typical CP system which means that it sacrifices availability for keeping stored data consistent.
+ However it has a failover option which it changes its behavior dramatically. 
+To be able to explain about failover feature, at first we briefly talk about Couchbase architecture and VBucket concept, then we describe the failover option and finally we explain what is rebalancing in Couchbase and why it is necessary.
 
 
 \subsubsection*{Couchbase structure}
-As we mentioned earlier, Couchbase is a document-oriented database, so the entity that is stored or retrieved from the database is document. Each document is indicated by a key. Couchbase uses the documents’ keys to assign each document to a VBucket. VBucket or virtual bucket is a virtual concept and it really doesn’t exist on servers, but Couchbase uses this concept to distribute data on different servers. It uses a table to assign VBuckets to servers, this procedure is illustrated in \ref{fig:vbucket}.
+As we mentioned earlier, Couchbase is a document-oriented database, so the entity stored or retrieved from the database is document. 
+Each document is indicated by a key.
+Couchbase uses the documents’ keys to assign each document to a VBucket. 
+VBucket or virtual bucket is a virtual concept and it really doesn’t exist on servers, but Couchbase uses this concept to distribute data on different servers. 
+It uses a table to assign VBuckets to servers, this procedure is illustrated in \ref{fig:vbucket}.
 
 \begin{figure}[h!]
 \centering
@@ -96,9 +94,17 @@ As we mentioned earlier, Couchbase is a document-oriented database, so the entit
 \end{figure}	
 
 \subsubsection*{Couchbase failover feature}
-Failover is the process of expulsion of server from the cluster. If failover procedure be activated for a server, that server is not a member of cluster anymore and it will not be even after healing back. The failover can be done manually or automatically. The automatic failover is de-activated by default, but you can easily activate it by using the web console of Couchbase. The automatic failover procedure will be started after a period of time that a server not responding to others and the minimum and default value for this period is 30 seconds. 
+Failover is the process of expulsion of server from the cluster. 
+If failover procedure be activated for a server, that server is not a member of cluster anymore and it will not be a member even after healing back. 
+The failover can be done manually or automatically. 
+The automatic failover is de-activated by default, but you can easily activate it by using the web console of Couchbase. 
+The automatic failover procedure will be started after a period of time that a server not responding to others.
+The minimum and default value for this period is 30 seconds. 
+
 \subsubsection*{Couchbase rebalancing feature}
-After expelling a server from cluster by using failover procedure, we need to rebalance the cluster. The rebalancing procedure is necessary because the number of active server in cluster is changed and some of VBucket assignment are not valid anymore, so we will have new VBucket assignment and some documents may transferred among different servers.
+After expelling a server from cluster by using failover procedure, we need to rebalance the cluster. 
+The rebalancing procedure is necessary because the number of active servers in cluster is changed and some of VBucket assignment are not valid anymore.
+ When the rebalancing procedure is finished, we will have new VBucket assignment and some documents may be transferred to another server.
 
 
 \subsection*{Voldemort}
@@ -148,23 +154,39 @@ On the other hand configuration, which used WAN replication perfectly survived t
 
 \subsection{Couchbase}
 
-In our experiments we have used Couchbase 2.1.1 (which is the latest available Community edition version). Since Couchbase is a peer-to-peer system, there is no need to manually set up master node. Servers obtain their configuration from each other in a peer-to-peer way.
+In our experiments we have used Couchbase 2.1.1 which is the latest available Community edition version. 
+Since Couchbase is a peer-to-peer system, there is no need to manually set up master node. 
+Servers obtain their configuration from each other in a peer-to-peer way.
 
 To start testing and checking the configuration we wrote and read 1000 documents to Couchbase system and all of them were successful. 
-The data is distributed approximately even among different servers (each server has about 200 document) and one replication from each document is stored on another server, but in under stress situations, for example when virtual machines did not have access to enough RAM, we observed that sometimes the client code throw exceptions in writing data but after checking the written data, that data document existed on Couchbase, so we conclude that exception always is not a sign of unsuccessful write.  
+The data is distributed approximately even among different servers (each server has about 200 documents).
+Replication factor is one, means that a second copy of each document is stored on another server.
+When the Couchbase system is under stress, for example when virtual machines do not have access to enough RAM, we observe that sometimes the client code throw exceptions in writing data.
+However after checking the written data, that data existe on Couchbase, so we conclude that exception always is not a sign of unsuccessful write.  
 
+Then we turned off one of the servers. 
+It resulted to about 20\% loss of our writings.
+In other words, just 803 documents were written on Couchbase successfuly and the client was in an attempting loop to write other documents to 5th server.
+This process was not successful as long as the 5th server was down.
+After writing documents to servers, if the 5th server goes down and the it be expelled from the cluster by using failover procedure, we are able to successfully read all the written documents. The successful reading are result of replication in Couchbase system.
 
-Then we turned off one of the servers. It resulted to losing about 20\% of our writes, in other words, just 803 data documents were written on Couchbase database and the client was in an attempting loop to write other documents to 5th server, which it was never successful, but if we turn the 5th server off after writing the data and do the failover over process, we can successfully read all the written documents because of provided replication in Couchbase system.
+For the network partition tests with deactivatedt failover, all writings and readings were successful.  
+However the number of replicas were reduced in comparison to prior test, so it lead us to design the next test. 
+In this test we also measured the number of readings and writings that are done per second in normal and network partition situations.
+The result was approximately the same in both conditions.
 
+In this test, after writing the 1000 documents in partitioned mode, we turned off the N5 server and we did the fail over process manually.
+This time we just were able to read 850 data documents out of 1000 written documents in first place. 
+It shows that the replication policy of Couchbase was not successful in presence of network partition.
 
-For the network partition tests without failover, all 1000 writes were successful, and then we read the data and all 1000 read were successful too, but the number of replicas were reduced in comparison to prior test, so it lead us to design the next test. In this test we also measured the number of reads and write that can be done per second in normal and network partition situation, the result was approximately the same for both conditions.
-
-
-In this test, after writing the 1000 documents in partitioned mode, we turned off the N5 server and we did the fail over process manually, this time we just were able to read 850 data documents out of 1000 written documents in first place. It shows that the replication policy of Couchbase was not successful in presence of network partition.
-
-
-In next test, we introduced network partition while we were writing documents to Couchbase database and we did the failover before finishing the writing to it. About 24 percent of writes were not successful, although this amount depends on the time of introducing partition and starting of failover procedure and may be varied among different tests. After document writing finished, just about 15\% of these documents could be read from a partition and 66\% could be read from another partition. You may noticed to the fact that the total number of read documents are more that written one, as we mentioned before the reason is that some unsuccessful written are not really unsuccessful and they are counted as unsuccessful because of thrown exceptions. We had some other documents before writing this series of documents, 70\% and 90\% of them could be read from these two different partitions, again the total is more than 100\% , but this time the reason is that some documents are retrieved from available replications. Then we fixed the partition and rebalanced the cluster again, 90\% of old documents and 15\% of new documents could be read from the joined cluster, it means that we lost the document stored on one of our partitions.
-
+In next test, we introduced network partition while we were writing documents to Couchbase database and we did the failover before finishing the writing. 
+About 24\% of writes were not successful, although this amount depends on the time of introducing partition and starting of failover procedure and may be varied among different tests.
+After document writing finished, just about 15\% of these documents could be read from one partition and 66\% could be read from another partition.
+You may noticed to the fact that the total number of read documents are more that written ones, as we mentioned before, the reason is that some unsuccessful written are not really unsuccessful and they are counted as unsuccessful because of thrown exceptions. 
+We had stored some other documents before writing this series of documents, 70\% and 90\% of them could be read from these two different partitions.
+Again the total is more than 100\% , but this time the reason is that some documents are retrieved from available replications. 
+Then we fixed the partition and rebalanced the cluster again, 90\% of old documents and 15\% of new documents could be read from the joined cluster.
+It means that we lost the document stored on one of our partitions.
 
 \subsection{Voldemort}
 
@@ -221,7 +243,12 @@ the recovered nodes. This may result in a higher number of exceptions than missi
 
 {\bf To be completed...}
 
-In Couchbase database, when its failover feature is off, it performs very well under network partition and it is a real reliable CP system, but the problem is that the availability has been sacrificed extremely and for instance you cannot read document written on a down server until it came back, so you have no way else activating the failover feature. When this feature is activated, the availability problem is solved but it is not a consistent database anymore and lots of document, even the successful written ones, may be lost in network partition.
+In Couchbase database, when its failover feature is off, it performs very well under network partition and it is a real reliable CP system.
+However the problem is that the availability has been sacrificed extremely, for instance you cannot read or even write documents assigned to a VBucket on a down server until it comes back.
+Therefore you have no way but activating the failover feature. 
+When this feature is activated, the availability problem is solved but it is not a consistent database anymore and lots of document, even the successful written ones, may be lost in network partition. 
+Another disadvantage of Couchbase under network partition is that, its replication policy is not fully functional anymore.
+It means that you may lose some part of your documents even by failure just in a single server.
 
 For the Hazelcast , it does not guarantee strong consistency. In different test cases or configurations, the performance of it
 vary significantly.
