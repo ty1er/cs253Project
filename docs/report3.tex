@@ -42,7 +42,7 @@ The probability of network partitioning depends on the topology of the network, 
 Crash of these nodes would lead to violation of network connectivity.
 
 Partitioning is a big issue for Internet traffic, where there is no way to determine the whole topology of the network.
-For a long time it was considered that the partitions inside the data centers occur extremely rarely, however data collected from the companies like Google, Amazon, etc, which run tens of data centers around the world, shows ???? that even with high intra-datacenter redundancy partitions still could emerge.
+For a long time it was considered that the partitions inside the data centers occur extremely rarely, however data collected from the companies like Google, Amazon, etc, which run tens of data centers around the world, shows ????(http://aphyr.com/posts/288-the-network-is-reliable) that even with high intra-datacenter redundancy partitions still could emerge.
 Or course the time, during with network is partitioned, is minuscule in comparison with the uptime of servers, but for distributed applications working under the high load (which are usually deployed in these data centers) even slight failure could cause a lot of troubles.
 Loss of communication, happened due to network failure, could cause local copies of the data to diverge.
 If the application is not aware of partitioning it could end up with incorrect state, after the network connectivity is restored.
