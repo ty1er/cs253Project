@@ -132,12 +132,32 @@ When the rebalancing procedure is finished, we will have new VBucket assignment 
 \subsection{Voldemort}
 
 Voldemort is a distributed key-value storage system, providing tunable consistency (strict quorum or eventual consistency). It is used in LinkedIn for certain 
-high-scalability storage problems where simple functional partitioning is not sufficient. 
+high-scalability storage problems where simple functional partitioning is not sufficient\cite{voldemort}. 
 
-Voldemort combines in memory caching with the storage system so that a separate caching tier is not required. Unlike MySQL replication, the reads and writes scale horizontally. It also allows cluster expansion without rebalancing all data.
+\subsubsection{Voldemort System Architecture}
 
-Voldemort provides simple API for data replication and placement, which makes it easy to accommondate a wide range of application specific strategies.
+In Figure \ref{sysarch}, it shows the logical architecture of Voldemort. Each layer implement a storage interface to support put, get, and delete 
+operations. Different layer also have different resposibilities, such as conflict resolution, faulure tolerance, and network communication.
+Because of the separation of layers, Voldemort is able to provide mixed services to meet different needs from its clients.
 
+\begin{figure}[h!]
+\centering
+\includegraphics[ height=200pt]{sysarch}
+\caption{System Architecture of Voldemort \cite{voldemort}}
+\label{fig:sysarch}
+\end{figure}	
+
+\subsubsection{Voldemort Consistency}
+
+Voldemort combines in memory caching with the storage system so that a separate caching tier is not required. Unlike MySQL replication, the reads and writes scale horizontally. It also allows cluster expansion without rebalancing all data. In order to avoid large amount of data exchanging when a server is added, or removed from the cluster, consistent hashing is implemented in Voldemort \cite{dynamo}. Voldemort provides simple API for data replication and placement, which makes it easy to accommondate a wide range of application specific strategies.
+
+\subsubsection{Voldemort Versioning}
+
+Versioning system is introduced to Voldemort for conflict resolution. Similar to Dynamo, Voldemort stores a unique counter with each piece of data, and only allows updates when the update specifies the correct clock value\cite{dynamo}. A vector-clock maintains a counter for each write, and determin which version come first or later based on the server:version paris. In this project, we focus on the independent writes for all nodes, so there are not conflicting writes. But in the future work, we may do some experiments on network paritions combining with write conflict.
+
+\subsubsection{Voldemort Routing Paramenters}
+
+The routing paramenters in Voldemort are the same as Quorum (N: number of replicas, W: number writes to block for, and R: number of machines to read from). Usually, we should set N > W + R. By tuning these three parameters, Voldemort will perform differently for put, get, and delete operations. 
 
 \section{Implementation}
 
@@ -213,9 +233,9 @@ It means that we lost the document stored on one of our partitions.
 
 \subsection{Voldemort}
 
-In the beginning, we proposed to use RethinkDB as a third storage system, that we would like to evaluate. But this database is not well documented because it is a new system that few people use it. So it would be hard to configure RethinkDB to support multi-datacenter replca set.
+In the beginning, we proposed to use RethinkDB as a third storage system, that we would like to evaluate. But this database is not well documented because it is a new system that few people use it. So it would be hard to configure RethinkDB to support multi-datacenter replca set\cite{rethinkdb}.
 
-Our backup option was to use Voldemort distributed key-value storage and configure it for replica set support. Different from the previous two (CP) database systems, Voldemort is a Availability-Partition Tolerant(AP) system. 
+Our backup option was to use Voldemort distributed key-value storage and configure it for replica set support. Different from the previous two (CP) database systems, Voldemort is a Availability-Partition Tolerant(AP) system\cite{nathan2010}. 
 
 We set the quorum factor as following:
 
@@ -270,8 +290,6 @@ This may result in a higher number of exceptions than missing objects in the end
 
 \subsection{Conclusions}
 
-{\bf To be completed...}
-
 In Couchbase, when failover feature is off, it performs very well under network partition and it is a real reliable CP system.
 However the problem is that the availability has been sacrificed extremely, for instance you cannot read or even write documents assigned to a VBucket on a down server until it comes back.
 Therefore you have no way but activating the failover feature. 
@@ -282,7 +300,7 @@ It means that you may lose some part of your documents even by failure just in a
 
 For the Hazelcast , it does not guarantee strong consistency. In different test cases or configurations, the performance of it
 vary significantly.
-For the AP systems (Voldemort), the availability is pretty good, almost all the writes are succesful eventually, with a failure rate around 5/2000 = 0.25\%.
+For the AP systems (Voldemort), the availability is pretty good, almost all the writes are succesful eventually \cite{werner}, with a failure rate around 5/2000 = 0.25\%.
 Exceptions does not indicate 100\% write failure, rather it does say that we do not know where the objects are.
 
 To sum up, designers and developers of distributed storage systems have not considered the devastating effects of network partition as much as needed.
