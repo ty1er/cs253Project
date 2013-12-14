@@ -246,7 +246,7 @@ Since Couchbase is a peer-to-peer system, there is no need to manually set up ma
 Servers obtain their configuration from each other in a peer-to-peer way.
 we have done different experiments on Couchbase and we will briefly express them one-by-one.
 
-\subsubsection{Couchbase experiment 1}
+\subsubsection{Couchbase experiment 1 (Overall functionality with no partition, no failover and no down server)}
 To start testing and checking the configuration we wrote and later read 1000 documents to Couchbase system and all of them were successful. 
 The data is distributed approximately evenly among different servers (each server stores about 200 documents).
 Replication factor is equal to 1, means that a replica of each document is stored somewhere on another server.
@@ -261,7 +261,7 @@ However after checking the written data, that data exist on Couchbase, so we con
 	\label{fig:diagram1}
 \end{figure}
 
-\subsubsection{Couchbase experiment 2}
+\subsubsection{Couchbase experiment 2(Overall functionality with no partition, no failover, and a down server)}
 
 In this test, we wrote 1000 documents on cluster when one of the servers is turned off.
 The result is that about 20\% of our writes ended up being lost.
@@ -278,7 +278,7 @@ The successful reading are result of replication in Couchbase system.
 	\label{fig:diagram2}
 \end{figure}
 
-\subsubsection{Couchbase experiment 3}
+\subsubsection{Couchbase experiment 3(Replication functionality with partition, no failover, and no down server)}
 For the network partition tests with deactivated failover, all writes and reads were successful.  
 However, the number of replicas were reduced in comparison to prior test, so it lead us to design the next test.
 The resulted system state can be seen in Figure \ref{fig:diagram3} and Figure \ref{fig:diagram4}.
@@ -297,7 +297,7 @@ The resulted system state can be seen in Figure \ref{fig:diagram3} and Figure \r
 	\label{fig:diagram4}
 \end{figure}
 
-\subsubsection{Couchbase experiment 4} 
+\subsubsection{Couchbase experiment 4(Performance comparison)} 
 Before starting test with activated failover feature, we measured the number of reads and writes per second that are acknowledged in normal and network partition situations.
 The result was approximately the same in both conditions.
 You can find the results in Figure \ref{fig:diagram5}.
@@ -308,7 +308,7 @@ You can find the results in Figure \ref{fig:diagram5}.
 	\label{fig:diagram5}
 \end{figure}
 
-\subsubsection{Couchbase experiment 5}
+\subsubsection{Couchbase experiment 5(Replication functionality with partition, no failover, and a down server)}
 In this test, after writing the 1000 documents in partitioned mode, we turned off the N5 server and we started failover process manually.
 This time we just were able to read 850 data documents out of 1000 written documents in first place. 
 It shows that the replication policy of Couchbase was not successful in presence of network partition.
@@ -320,7 +320,7 @@ You can compare the results in Figure \ref{fig:diagram6}.
 	\label{fig:diagram6}
 \end{figure}
 
-\subsubsection{Couchbase experiment 6}
+\subsubsection{Couchbase experiment 6(Overall functionality with partition, failover, no down server)}
 Before starting this test, 10K documents were on cluster, we call them old data in this part.
 The 100K documents which are written in this test on cluster are called new data in this part. 
 In this test, we introduced network partition while we were writing 100K documents to Couchbase database and we started failover procedure prior to finishing of the writing process. 
