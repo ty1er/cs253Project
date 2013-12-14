@@ -27,10 +27,10 @@
 
 The Internet and computer networks were initially designed with the idea that equipment, carrying individual packets, is faulty and unreliable.
 This premise heavily influenced on the implementation of OSI reference model.
-Transport layer protocols of this model (TCP as the most popular) provides users with the abstraction of reliable transferring of data packets, however the implementation of this interface is build on top of noisy, volatile and inherently unreliable network \cite{deutsch1992eight}.
+Transport layer protocols of this model (TCP as the most popular) provide users with the abstraction of reliable data packets transfer channel, however the implementation of this interface is build on top of noisy, volatile and inherently unreliable network \cite{deutsch1992eight}.
 In the network packets could be sporadically dropped, delayed, duplicated and reordered.
 
-To maintain this abstraction TCP implements an algorithm to ensure reliability properties, but it comes with the cost of increased transmission latency.
+To maintain this abstraction TCP implements statefull handshake algorithm to ensure that transfered data was reliably received on the destination node, but it comes with the cost of increased transmission latency.
 Basically, that means that any operation on the client is blocked, until it will receive an acknowledgment, that the transmission was delivered successfully. 
 In particularly noisy networks there is no any guarantee that this acknowledgment would be received at all, so theoretically client could wait forever.
 In practice clients usually have some reasonable timeouts, which are used to determine whether the transmission has succeed or not.
@@ -43,7 +43,7 @@ The probability of network partitioning depends on the topology of the network, 
 Crash of these nodes would lead to violation of network connectivity.
 
 Partitioning is a big issue for Internet traffic, where there is no way to determine the whole topology of the network.
-For a long time it was considered that the partitions inside the data centers occur extremely rarely, however data collected from the companies like Google, Amazon, etc, which run tens of data centers around the world, shows ????(http://aphyr.com/posts/288-the-network-is-reliable) that even with high intra-datacenter redundancy partitions still could emerge.
+For a long time it was considered that the partitions inside the data centers occur extremely rarely, however data \cite{aphyrNetworkStatics,dean2009designs} collected from the companies like Google, Amazon, etc, which have tens of data centers scattered around the globe, shows that even with high intra-datacenter redundancy partitions still could emerge.
 Or course the time, during with network is partitioned, is minuscule in comparison with the uptime of servers, but for distributed applications working under the high load (which are usually deployed in these data centers) even slight failure could cause a lot of troubles.
 Loss of communication, happened due to network failure, could cause local copies of the data to diverge.
 If the application is not aware of partitioning it could end up with incorrect state, after the network connectivity is restored.
@@ -59,7 +59,7 @@ The goal of current project is to make a case study for different distributed st
 Although, it might seem that research in a area of distributed systems was actively done only during past decade, this fields captured an attention of academia long time before.
 
 The seminal paper by Davidson et al. \cite{Davidson:1985:CPN:5505.5508} already was describing the properties of distributed systems with replicated data, working in partitioned networks.
-This work was the first, discussing the trade-of between consistency and availability in a case of lack of network connectivity.
+This work was the first, discussing the tradeof between consistency and availability in a case of lack of network connectivity.
 However it was assuming that modifications are executed in transactional context, thereby allowing only strong linearizable consistency guarantees.
 This approach was proved to be non-scalable in real distributed setup.
 
@@ -85,7 +85,7 @@ The following work presents a case study, that tries to follow the same approach
 \section{Selected storage systems}
 \label{sec:candidates}
 
-\subsection*{Hazelcast}
+\subsection{Hazelcast}
 Hazelcast is distributed highly scalable in-memory grid, providing distributed access to the typical data structures (Maps, Queues, Lists, Sets) partitioned across the cluster. 
 Hazelcast is peer-to-peer system without any single point of failure problem.
 
@@ -93,20 +93,20 @@ It supports multi-datacenter configuration via WANReplication feature with activ
 
 Hazelcast also allows user to pick how many replicas maintain across the cluster and what conflict resolution strategy to use, in the case of conflicting entries.  
 
-\subsection*{Couchbase}
+\subsection{Couchbase}
 
 Couchbase is a distributed scalable document-oriented database, which runs on shared-nothing clusters.
 In terms of CAP theorem Couchbase is a typical CP system which means that it sacrifices availability for keeping stored data consistent.
- However it has a failover option which it changes its behavior dramatically. 
-To be able to explain about failover feature, at first we briefly talk about Couchbase architecture and VBucket concept, then we describe the failover option and finally we explain what is rebalancing in Couchbase and why it is necessary.
+However, it has a failover option that changes its behavior dramatically. 
+In order to explain failover feature in details, at first we briefly talk about Couchbase architecture and VBucket concept, then we describe the failover option and finally we explain what is rebalancing in Couchbase and why it is necessary.
 
 
-\subsubsection*{Couchbase structure}
-As we mentioned earlier, Couchbase is a document-oriented database, so the entity stored or retrieved from the database is document. 
+\subsubsection{Couchbase structure}
+As it was mentioned earlier, Couchbase is a document-oriented database, so the entities stored or retrieved from the database are documents. 
 Each document is indicated by a key.
-Couchbase uses the documents’ keys to assign each document to a VBucket. 
-VBucket or virtual bucket is a virtual concept and it really doesn’t exist on servers, but Couchbase uses this concept to distribute data on different servers. 
-It uses a table to assign VBuckets to servers, this procedure is illustrated in \ref{fig:vbucket}.
+Couchbase uses the document's key to assign it to particular VBucket. 
+VBucket (or virtual bucket) is an abstract concept, which does not really exist on servers, but Couchbase uses this concept to distribute data among different servers. 
+To assign VBuckets to servers, Couchbase uses a special table shown in Figure \ref{fig:vbucket}.
 
 \begin{figure}[h!]
 \centering
@@ -115,21 +115,21 @@ It uses a table to assign VBuckets to servers, this procedure is illustrated in 
 \label{fig:vbucket}
 \end{figure}	
 
-\subsubsection*{Couchbase failover feature}
+\subsubsection{Couchbase failover feature}
 Failover is the process of expulsion of server from the cluster. 
-If failover procedure be activated for a server, that server is not a member of cluster anymore and it will not be a member even after healing back. 
+If failover procedure is activated on the node, this server loses it membership in a cluster and it cannot rejoin to the cluster even after healing back. 
 The failover can be done manually or automatically. 
 The automatic failover is de-activated by default, but you can easily activate it by using the web console of Couchbase. 
 The automatic failover procedure will be started after a period of time that a server not responding to others.
 The minimum and default value for this period is 30 seconds. 
 
-\subsubsection*{Couchbase rebalancing feature}
-After expelling a server from cluster by using failover procedure, we need to rebalance the cluster. 
-The rebalancing procedure is necessary because the number of active servers in cluster is changed and some of VBucket assignment are not valid anymore.
- When the rebalancing procedure is finished, we will have new VBucket assignment and some documents may be transferred to another server.
+\subsubsection{Couchbase rebalancing feature}
+After expelling a server from the cluster using failover procedure, we need to rebalance the cluster. 
+The rebalancing procedure is necessary because the number of active servers in the cluster has changed and some of VBucket assignment are not valid anymore.
+When the rebalancing procedure is finished, we will have new VBucket assignment and some documents may be transferred to another server.
 
 
-\subsection*{Voldemort}
+\subsection{Voldemort}
 
 Voldemort is a distributed key-value storage system, providing tunable consistency (strict quorum or eventual consistency). It is used in LinkedIn for certain 
 high-scalability storage problems where simple functional partitioning is not sufficient. 
@@ -141,7 +141,7 @@ Voldemort provides simple API for data replication and placement, which makes it
 
 \section{Implementation}
 
-These tests are similar in all three candidate storage systems in essence, but due to the specific characteristics of each systems the details could differ. 
+These tests are similar for all three candidate storage systems in essence, but due to the specific characteristics of each system the details could differ. 
 For instance, some storage systems have peer-to-peer nature while the others have master-slave architecture, each of these categories needs different test scenarios to be able to carry out comprehensive tests.
 
 Our setup consists of five virtual machines, with Ubuntu Linux installed on all of them along with the considered data storage system. 
@@ -176,35 +176,36 @@ On the other hand configuration, which used WAN replication perfectly survived t
 
 \subsection{Couchbase}
 
-In our experiments we have used Couchbase 2.1.1 which is the latest available Community edition version. 
+In our experiments we have used Couchbase 2.1.1, which is the latest available Community edition version. 
 Since Couchbase is a peer-to-peer system, there is no need to manually set up master node. 
 Servers obtain their configuration from each other in a peer-to-peer way.
 
-To start testing and checking the configuration we wrote and read 1000 documents to Couchbase system and all of them were successful. 
-The data is distributed approximately even among different servers (each server has about 200 documents).
-Replication factor is one, means that a second copy of each document is stored on another server.
-When the Couchbase system is under stress, for example when virtual machines do not have access to enough RAM, we observe that sometimes the client code throw exceptions in writing data.
-However after checking the written data, that data existe on Couchbase, so we conclude that exception always is not a sign of unsuccessful write.  
+To start testing and checking the configuration we wrote and later read 1000 documents to Couchbase system and all of them were successful. 
+The data is distributed approximately evenly among different servers (each server stores about 200 documents).
+Replication factor is equal to 1, means that a replica of each document is stored somewhere on another server.
+When the Couchbase system is under stress (for example when virtual machines do not have access to enough RAM), we observe that sometimes the client code throw exceptions in writing data.
+However after checking the written data, that data exist on Couchbase, so we conclude that exception always is not a sign of unsuccessful write.  
 
-Then we turned off one of the servers. 
-It resulted to about 20\% loss of our writings.
-In other words, just 803 documents were written on Couchbase successfuly and the client was in an attempting loop to write other documents to 5th server.
-This process was not successful as long as the 5th server was down.
-After writing documents to servers, if the 5th server goes down and the it be expelled from the cluster by using failover procedure, we are able to successfully read all the written documents. The successful reading are result of replication in Couchbase system.
+When one of the servers is turned off, about 20\% of our writes ended up being lost.
+In other words, just 803 documents were written into Couchbase successfully, and the client was attempting to write other documents to server N5 in a loop.
+The loop was infinitely executing as long as the node N5 was down.
+After writing documents to servers, if the N5 remains being unconnected and is expelled from the cluster using failover procedure, we were able to successfully read all the written documents.
+The successful reading are result of replication in Couchbase system.
 
-For the network partition tests with deactivatedt failover, all writings and readings were successful.  
-However the number of replicas were reduced in comparison to prior test, so it lead us to design the next test. 
-In this test we also measured the number of readings and writings that are done per second in normal and network partition situations.
+For the network partition tests with deactivated failover, all writes and reads were successful.  
+However, the number of replicas were reduced in comparison to prior test, so it lead us to design the next test. 
+In this test we also measured the number of reads and writes per second that are acknowledged in normal and network partition situations.
 The result was approximately the same in both conditions.
 
-In this test, after writing the 1000 documents in partitioned mode, we turned off the N5 server and we did the fail over process manually.
+In this test, after writing the 1000 documents in partitioned mode, we turned off the N5 server and we started failover process manually.
 This time we just were able to read 850 data documents out of 1000 written documents in first place. 
 It shows that the replication policy of Couchbase was not successful in presence of network partition.
 
-In next test, we introduced network partition while we were writing documents to Couchbase database and we did the failover before finishing the writing. 
-About 24\% of writes were not successful, although this amount depends on the time of introducing partition and starting of failover procedure and may be varied among different tests.
-After document writing finished, just about 15\% of these documents could be read from one partition and 66\% could be read from another partition.
-You may noticed to the fact that the total number of read documents are more that written ones, as we mentioned before, the reason is that some unsuccessful written are not really unsuccessful and they are counted as unsuccessful because of thrown exceptions. 
+In the next test, we introduced network partition while we were writing documents to Couchbase database and we started failover procedure prior to finishing of the writing process. 
+About 24\% of writes were not successful, although this amount depends on the time, when the partition was introduced and failover procedure was started, and may vary between different tests.
+After document writes were finished, just about 15\% of these documents could be read from one partition and 66\% could be read from another partition.
+You may noticed the fact, that the total number of documents that have been read, is more that the number of written documents.
+As we mentioned before, the reason is that some unsuccessful written are not really unsuccessful and they are counted as unsuccessful because acknowledgment for these operations was was received, due to thrown exceptions. 
 We had stored some other documents before writing this series of documents, 70\% and 90\% of them could be read from these two different partitions.
 Again the total is more than 100\% , but this time the reason is that some documents are retrieved from available replications. 
 Then we fixed the partition and rebalanced the cluster again, 90\% of old documents and 15\% of new documents could be read from the joined cluster.
@@ -231,12 +232,17 @@ We set the quorum factor as following:
   \end{tabular}
 \end{table}
 
-At the first stage, we opened only two nodes (N1-N2), then all write operations received exception, indicating that the write was failed. Because the W = 3, so the database system throws an exception back to the client. When we set up the third node (N3) to meet the least number of nodes for required-writes and required-reads, the client was able to read the objects we wrote before, even we had received exceptions. Voldemort is implemented with ``Hinted Handoff'' technique, which can reach eventual consistency. During writes, if the destination nodes are down, Voldemort stores a ``hint'' of the updated value on one of the alive node. As soon as the down nodes are alive again, the ``hints'' will be pushed to them. Based on this technique, Voldemort can keep the data consistent even when the required-writes cannot meet.
+At the first stage, we opened only two nodes (N1-N2), then all write operations received exception, indicating that the write was failed. 
+Because the replication could not be executed successfully (since W = 3), the database system throws an exception back to the client. 
+When we woke up the third node (N3) to meet the least number of nodes for required-writes and required-reads, the client was able to read the objects we wrote before, even though this writes were unsuccessful, and should not be a part of result set. 
+Voldemort implements ``Hinted Handoff'' technique, used to maintain eventual consistency semantics. 
+During writes, if the destination nodes are down, Voldemort stores a ``hint'' of the updated value on one of the alive node. 
+As soon as the down nodes are alive again, the ``hints'' will be pushed to them. 
+Based on this technique, Voldemort can keep the data consistent even when the required-write quorum cannot meet.
 
-The next step was to test the five nodes with network partitions as menetioned before. 
+The next step was to test the five nodes with network partitions as it was mentioned before. 
 
 {\bf Steps:}
-
 \begin{enumerate}
   \item Start running Voldemort in 5 VMs, 5 clinets keep writing distinguished data to their correspoding nodes.
   \item Use iptables to create a network partition between N1/N2 and N3/N4/N5 for a while(20 sec.), the clients keep writing data.
@@ -244,8 +250,7 @@ The next step was to test the five nodes with network partitions as menetioned b
   \item After all writes in one node is done, each client check the data in its node independently.
 \end{enumerate}
 
-{\bf Results}
-
+{\bf Results:}
 \begin{enumerate}
   \item Nothing happens, Voldemore does not return anything if the write/read is successfully.
   \item After network partition starts, clients of N1 and N2 receive exceptions because the required-write (W = 3) cannot meet. N3/N4/N5 keep the same as the above. 
@@ -253,23 +258,26 @@ The next step was to test the five nodes with network partitions as menetioned b
   \item Finaly, each node finishes exchanging their data for replicas. Then all nodes have a final replications (N = 5) of all data objects.
 \end{enumerate}
 
-In the final set of all data, there are some objects missing. Based on the first stage, we found that Voldemort could handle writes when the node writting to is down. 
-And the performance of this ``Hinted Handoff'' technique may depend on the number of objects to be temporarily stored. During the period of network partition (20 seconds), 
-if the number of writes with exceptions is not large (1 write/second, 20 writes in total), Voldemort is able to handle all of them after network partition is removed. 
-Howerve, if the number of failed writes is large (10 writes/second, 200 in total), Voldemort would drop some of the objects, so there will be some objects missing in the end. 
-In both cases, the number of exceptions the clients received is larger than the number of missing objects. The objects to write are failed to meet
-the required-write (W = 5), so Voldemort throws an exception. However, the ``Hinted Handoff'' technique can store some (may not all) of the failed objects, then write back to
-the recovered nodes. This may result in a higher number of exceptions than missing objects in the end.
+In the final set of all data, there some objects were missing. 
+Based on the first stage, we found that Voldemort could handle writes when the node, we are writing to, is down. 
+Performance of hinted handoff may depend on the number of objects, which should be temporarily stored. 
+During the network partition period (20 seconds), if the number of writes with exceptions was not large (1 write/second, 20 writes in total), Voldemort was able to handle all of them after network partition is removed. 
+However, if the number of failed writes is large (10 writes/second, 200 in total), Voldemort would drop some of the objects, so some objects will end up missing. 
+In both cases, the number of exceptions the clients received is larger than the number of missing objects. 
+The objects to write are failed to meet the required-write (W = 5), so Voldemort throws an exception. 
+However, hinted handoff allows the database to store some (may not all) of the failed objects, and write them back to the recovered nodes later. 
+This may result in a higher number of exceptions than missing objects in the end.
 
 \subsection{Conclusions}
 
 {\bf To be completed...}
 
-In Couchbase database, when its failover feature is off, it performs very well under network partition and it is a real reliable CP system.
+In Couchbase, when failover feature is off, it performs very well under network partition and it is a real reliable CP system.
 However the problem is that the availability has been sacrificed extremely, for instance you cannot read or even write documents assigned to a VBucket on a down server until it comes back.
 Therefore you have no way but activating the failover feature. 
-When this feature is activated, the availability problem is solved but it is not a consistent database anymore and lots of document, even the successful written ones, may be lost in network partition. 
-Another disadvantage of Couchbase under network partition is that, its replication policy is not fully functional anymore.
+When this feature is activated, the availability problem is solved but it is not a consistent database anymore and lots of documents, including the ones which were successfully written, may end up being lost. 
+
+Another downside of Couchbase under network partition is that, its replication policy is not fully functional anymore.
 It means that you may lose some part of your documents even by failure just in a single server.
 
 For the Hazelcast , it does not guarantee strong consistency. In different test cases or configurations, the performance of it
