@@ -137,10 +137,10 @@ Depending on the Hazelcast configuration these conflicts would be resolved accor
 \subsubsection{Couchbase}
 
 Couchbase is a distributed scalable document-oriented database, which runs on shared-nothing clusters.
-In terms of CAP theorem Couchbase is a typical CP system which means that it sacrifices availability for keeping stored data consistent.
+In terms of CAP theorem Couchbase is known as a typical CP system \cite{Couchbasewiki} which means that it sacrifices availability for keeping stored data consistent.
+Although we like to point out to that in its documentation is not mentioned that it is a CP system and just has emphasized on that it is a consistent system \cite{Couchbasedoc}.  
 However, it has a failover option that changes its behavior dramatically. 
 In order to explain failover feature in details, at first we briefly talk about Couchbase architecture and VBucket concept, then we describe the failover option and finally we explain what is rebalancing in Couchbase and why it is necessary.
-
 
 \paragraph{Couchbase structure}
 As it was mentioned earlier, Couchbase is a document-oriented database, so the entities stored or retrieved from the database are documents. 
@@ -169,16 +169,35 @@ After expelling a server from the cluster using failover procedure, we need to r
 The rebalancing procedure is necessary because the number of active servers in the cluster has changed and some of VBucket assignment are not valid anymore.
 When the rebalancing procedure is finished, we will have new VBucket assignment and some documents may be transferred to another server.
 
-
 \subsubsection{Voldemort}
 
 Voldemort is a distributed key-value storage system, providing tunable consistency (strict quorum or eventual consistency). It is used in LinkedIn for certain 
-high-scalability storage problems where simple functional partitioning is not sufficient. 
+high-scalability storage problems where simple functional partitioning is not sufficient \cite{voldemort}. 
 
-Voldemort combines in memory caching with the storage system so that a separate caching tier is not required. Unlike MySQL replication, the reads and writes scale horizontally. It also allows cluster expansion without rebalancing all data.
+\paragraph{Voldemort System Architecture}
 
-Voldemort provides simple API for data replication and placement, which makes it easy to accommodate a wide range of application specific strategies.
+In Figure \ref{fig:sysarch}, it shows the logical architecture of Voldemort. Each layer implement a storage interface to support put, get, and delete 
+operations. Different layer also have different resposibilities, such as conflict resolution, faulure tolerance, and network communication.
+Because of the separation of layers, Voldemort is able to provide mixed services to meet different needs from its clients.
 
+\begin{figure}[h!]
+\centering
+\includegraphics[ height=200pt]{sysarch}
+\caption{System Architecture of Voldemort \cite{voldemort}}
+\label{fig:sysarch}
+\end{figure}	
+
+\paragraph{Voldemort Consistency}
+
+Voldemort combines in memory caching with the storage system so that a separate caching tier is not required. Unlike MySQL replication, the reads and writes scale horizontally. It also allows cluster expansion without rebalancing all data. In order to avoid large amount of data exchanging when a server is added, or removed from the cluster, consistent hashing is implemented in Voldemort \cite{dynamo}. Voldemort provides simple API for data replication and placement, which makes it easy to accommondate a wide range of application specific strategies.
+
+\paragraph{Voldemort Versioning}
+
+Versioning system is introduced to Voldemort for conflict resolution. Similar to Dynamo, Voldemort stores a unique counter with each piece of data, and only allows updates when the update specifies the correct clock value \cite{decandia2007dynamo}. A vector-clock maintains a counter for each write, and determin which version come first or later based on the server:version paris. In this project, we focus on the independent writes for all nodes, so there are not conflicting writes. But in the future work, we may do some experiments on network paritions combining with write conflict.
+
+\paragraph{Voldemort Routing Paramenters}
+
+The routing paramenters in Voldemort are the same as Quorum (N: number of replicas, W: number writes to block for, and R: number of machines to read from). Usually, we should set $N > W + R$. By tuning these three parameters, Voldemort will perform differently for put, get, and delete operations. 
 
 \section{Implementation}
 
@@ -200,7 +219,7 @@ Overall cluster configuration is shown on Figure \ref{fig:cluster}.
 
 \begin{figure}[h!]
 	\centering
-	\includegraphics{cluster}
+	\includegraphics[width=0.5\textwidth]{cluster}
 	\caption{Cluster setup. Data storage system deployed on blue nodes N1-N5, client applications deployed on green nodes C1-C5. Red line represent the network partition}
 	\label{fig:cluster}
 \end{figure}
@@ -225,43 +244,109 @@ On the other hand configuration, which used WAN replication perfectly survived t
 In our experiments we have used Couchbase 2.1.1, which is the latest available Community edition version. 
 Since Couchbase is a peer-to-peer system, there is no need to manually set up master node. 
 Servers obtain their configuration from each other in a peer-to-peer way.
+we have done different experiments on Couchbase and we will briefly express them one-by-one.
 
+\subsubsection{Couchbase experiment 1}
 To start testing and checking the configuration we wrote and later read 1000 documents to Couchbase system and all of them were successful. 
 The data is distributed approximately evenly among different servers (each server stores about 200 documents).
 Replication factor is equal to 1, means that a replica of each document is stored somewhere on another server.
+The cluster state after writing these writes in illustrated in Figure \ref{fig:diagram1}.
 When the Couchbase system is under stress (for example when virtual machines do not have access to enough RAM), we observe that sometimes the client code throw exceptions in writing data.
 However after checking the written data, that data exist on Couchbase, so we conclude that exception always is not a sign of unsuccessful write.  
 
-When one of the servers is turned off, about 20\% of our writes ended up being lost.
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.7\textwidth]{diagram1}
+	\caption{Cluster state after writing 1000 documents on it successfully}
+	\label{fig:diagram1}
+\end{figure}
+
+\subsubsection{Couchbase experiment 2}
+
+In this test, we wrote 1000 documents on cluster when one of the servers is turned off.
+The result is that about 20\% of our writes ended up being lost.
 In other words, just 803 documents were written into Couchbase successfully, and the client was attempting to write other documents to server N5 in a loop.
 The loop was infinitely executing as long as the node N5 was down.
+The cluster state after this test is illustrated in Figure \ref{fig:diagram2}.
 After writing documents to servers, if the N5 remains being unconnected and is expelled from the cluster using failover procedure, we were able to successfully read all the written documents.
 The successful reading are result of replication in Couchbase system.
 
-For the network partition tests with deactivated failover, all writes and reads were successful.  
-However, the number of replicas were reduced in comparison to prior test, so it lead us to design the next test. 
-In this test we also measured the number of reads and writes per second that are acknowledged in normal and network partition situations.
-The result was approximately the same in both conditions.
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.7\textwidth]{diagram2}
+	\caption{Cluster state after writing 1000 documents on it when one of the servers is down}
+	\label{fig:diagram2}
+\end{figure}
 
+\subsubsection{Couchbase experiment 3}
+For the network partition tests with deactivated failover, all writes and reads were successful.  
+However, the number of replicas were reduced in comparison to prior test, so it lead us to design the next test.
+The resulted system state can be seen in Figure \ref{fig:diagram3} and Figure \ref{fig:diagram4}.
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.7\textwidth]{diagram3}
+	\caption{Cluster state after writing 1000 documents on partitioned cluster with de-activated failover - partition 1}
+	\label{fig:diagram3}
+\end{figure}
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.7\textwidth]{diagram4}
+	\caption{Cluster state after writing 1000 documents on partitioned cluster with de-activated failover - partition 2}
+	\label{fig:diagram4}
+\end{figure}
+
+\subsubsection{Couchbase experiment 4} 
+Before starting test with activated failover feature, we measured the number of reads and writes per second that are acknowledged in normal and network partition situations.
+The result was approximately the same in both conditions.
+You can find the results in Figure \ref{fig:diagram5}.
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.7\textwidth]{diagram5}
+	\caption{Average time spent for writing 1000 documents on cluster in normal and partitioned situations}
+	\label{fig:diagram5}
+\end{figure}
+
+\subsubsection{Couchbase experiment 5}
 In this test, after writing the 1000 documents in partitioned mode, we turned off the N5 server and we started failover process manually.
 This time we just were able to read 850 data documents out of 1000 written documents in first place. 
 It shows that the replication policy of Couchbase was not successful in presence of network partition.
+You can compare the results in Figure \ref{fig:diagram6}.
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.7\textwidth]{diagram6}
+	\caption{Number of survived documents based on when going down of a server happens}
+	\label{fig:diagram6}
+\end{figure}
 
-In the next test, we introduced network partition while we were writing documents to Couchbase database and we started failover procedure prior to finishing of the writing process. 
+\subsubsection{Couchbase experiment 6}
+Before starting this test, 10K documents were on cluster, we call them old data in this part.
+The 100K documents which are written in this test on cluster are called new data in this part. 
+In this test, we introduced network partition while we were writing 100K documents to Couchbase database and we started failover procedure prior to finishing of the writing process. 
 About 24\% of writes were not successful, although this amount depends on the time, when the partition was introduced and failover procedure was started, and may vary between different tests.
+
 After document writes were finished, just about 15\% of these documents could be read from one partition and 66\% could be read from another partition.
 You may noticed the fact, that the total number of documents that have been read, is more that the number of written documents.
 As we mentioned before, the reason is that some unsuccessful written are not really unsuccessful and they are counted as unsuccessful because acknowledgment for these operations was was received, due to thrown exceptions. 
-We had stored some other documents before writing this series of documents, 70\% and 90\% of them could be read from these two different partitions.
+We had stored some other documents before writing this series of documents, old data, 70\% and 90\% of them could be read from these two different partitions.
+
 Again the total is more than 100\% , but this time the reason is that some documents are retrieved from available replications. 
 Then we fixed the partition and rebalanced the cluster again, 90\% of old documents and 15\% of new documents could be read from the joined cluster.
 It means that we lost the document stored on one of our partitions.
+You can find the results in Figure \ref{fig:diagram7}
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=0.7\textwidth]{diagram7}
+	\caption{Number of successful writings or readings to cluster. P1 and P2 are two partitions. Old data was existed on cluster before this test. New data is this test's documents}
+	\label{fig:diagram7}
+\end{figure}
 
 \subsection{Voldemort}
 
-In the beginning, we proposed to use RethinkDB as a third storage system, that we would like to evaluate. But this database is not well documented because it is a new system that few people use it. So it would be hard to configure RethinkDB to support multi-datacenter replca set.
+In the beginning, we proposed to use RethinkDB as a third storage system, that we would like to evaluate. But this database is not well documented because it is a new system that few people use it. So it would be hard to configure RethinkDB to support multi-datacenter replca set\cite{rethinkdb}.
 
-Our backup option was to use Voldemort distributed key-value storage and configure it for replica set support. Different from the previous two (CP) database systems, Voldemort is a Availability-Partition Tolerant(AP) system. 
+Our backup option was to use Voldemort distributed key-value storage and configure it for replica set support. Different from the previous two (CP) database systems, Voldemort is a Availability-Partition Tolerant(AP) system\cite{nathan2010}. 
 
 We set the quorum factor as following:
 
@@ -326,7 +411,7 @@ It means that you may lose some part of your documents even by failure just in a
 
 For the Hazelcast , it does not guarantee strong consistency. In different test cases or configurations, the performance of it
 vary significantly.
-For the AP systems (Voldemort), the availability is pretty good, almost all the writes are succesful eventually, with a failure rate around 5/2000 = 0.25\%.
+For the AP systems (Voldemort), the availability is pretty good, almost all the writes are succesful eventually \cite{werner}, with a failure rate around 5/2000 = 0.25\%.
 Exceptions does not indicate 100\% write failure, rather it does say that we do not know where the objects are.
 
 To sum up, designers and developers of distributed storage systems have not considered the devastating effects of network partition as much as needed.
