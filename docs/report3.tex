@@ -79,21 +79,62 @@ The real implementation could claim to maintain certain characteristics, like co
 But in reality in border situations, like slow network, dropping part of packets or temporary network partition, it could demonstrate completely different behavior, violating proclaimed guarantees.
 
 Only recently these emerged a work \cite{jepsen}, which tried to create an evaluation framework for measuring systems behavior under assumption that network is partitioned.
-Some popular distributed data storages like Cassandra \cite{lakshman2010cassandra}, MongoDB \cite{mongo}, Redis \cite{redis}, Riak \cite{riak}, etc were used in this study.
+Some popular distributed data storages like Cassandra \cite{lakshman2010cassandra}, MongoDB \cite{mongo}, Redis \cite{redis}, Riak \cite{riak}, and some others were used in this study.
 The following work presents a case study, that tries to follow the same approach, for performance evaluation of various distributed databases.
 
-\section{Selected storage systems}
-\label{sec:candidates}
+\section{Design}
 
-\subsection{Hazelcast}
-Hazelcast is distributed highly scalable in-memory grid, providing distributed access to the typical data structures (Maps, Queues, Lists, Sets) partitioned across the cluster. 
-Hazelcast is peer-to-peer system without any single point of failure problem.
+In order to investigate how distributed systems perform in the case of network partitions as the first stage we need to pick storage systems, which we are going to test in our project.
+However a storage system should have certain characteristics, to make it suitable for our case study. 
+In the following subsections we briefly describe these characteristics and according to them we introduce distributed systems, that we have chosen as candidates for our experiments.
 
-It supports multi-datacenter configuration via WANReplication feature with active-active and active-passive replication configurations.
+\subsection{Desired characteristics}
 
-Hazelcast also allows user to pick how many replicas maintain across the cluster and what conflict resolution strategy to use, in the case of conflicting entries.  
+We have considered the following properties as leading for selecting storage systems, although they do not limit the number of proper storage systems to few numbers.
+As an additional criteria we used other properties like existing client libraries/APIs/drivers, documentation and developer community as well as our experience with these or similar systems.
 
-\subsection{Couchbase}
+\subsubsection*{CAP theorem perspective}
+CAP theorem considers three aspects of distributed systems: consistency, availability, and partition tolerance. 
+Since the goal of the current project is to measure systems performance under assumption that the network is partitioned, we are left with two choices. 
+
+The first category is AP, system which emphasize on availability aspect of a distributed systems. 
+The second is CP system, which considers consistency as more important property of a distributed system.
+
+Ideally we would like to explore both kind of systems to provide a fair comparison.
+
+\subsubsection*{Flexible replication policy}
+We would like to use storage systems, which have robust and configurable replication policies. 
+The replication policy should be robust because a weak replication policy cannot perform well under network partitioning conditions and it should be configurable to enable us to investigate different aspects of a replication system.
+
+Ideally the system should provide different replication parameters (sync/async, number of replicas) as a configurable setting.
+
+\subsubsection*{Multi-datacenter support}
+
+Usually network partitioning events occur when the data storage is deployed in several datacenters (single DC configurations are less likely to experience partitions because of redundant network links). 
+Therefore we would like to test only the systems, which claims to support multi-datacenter deployment scenarios.
+
+\subsection{Selected storage systems}
+
+\subsubsection{Hazelcast}
+Hazelcast is an open source distributed highly scalable in-memory grid.
+Mainly Hazelcast is used to build highly available distributed caches, since it is heavily optimized to for in-memory operation.
+However distributed caching is not the only scenario, in which one could use Hazelcast.
+Although it is meant to work with small dataset, which can be loaded into memory on a single node, it is possible to use persist data, using cache write-through policy, which turns Hazelcast into real database.
+
+Instead on using custom data model Hazelcast implements standard Java Collections API, providing users with the distributed versions of typical data structures (Maps, Queues, Lists, Sets).
+The implementation is completely transparent from user's point of view since Hazelcast's collections implement the same Java interface, although the implementation is much more complicated.
+
+Hazelcast provides users with flexible replication strategies.
+Replication could be changed for each data collection individually.
+The user is able to pick a replication factor and type of replication: synchronous, asynchronous or both.
+There also exists a special replication strategy for placing replicas in different clusters, called WANReplication.
+Using WANReplication a user can pick either active-active or active-passive replication semantics for inter-DC replication.
+
+Each node in the Hazelcast cluster is identical, there is not dedicated masters and slaves, which resolves single point of failure problem.
+Since the master is determined during election process, consistency conflicts could potentially emerge.
+Depending on the Hazelcast configuration these conflicts would be resolved according to chosen strategy, like Last-Write-Wins or custom merge function. 
+
+\subsubsection{Couchbase}
 
 Couchbase is a distributed scalable document-oriented database, which runs on shared-nothing clusters.
 In terms of CAP theorem Couchbase is a typical CP system which means that it sacrifices availability for keeping stored data consistent.
@@ -101,7 +142,7 @@ However, it has a failover option that changes its behavior dramatically.
 In order to explain failover feature in details, at first we briefly talk about Couchbase architecture and VBucket concept, then we describe the failover option and finally we explain what is rebalancing in Couchbase and why it is necessary.
 
 
-\subsubsection{Couchbase structure}
+\paragraph{Couchbase structure}
 As it was mentioned earlier, Couchbase is a document-oriented database, so the entities stored or retrieved from the database are documents. 
 Each document is indicated by a key.
 Couchbase uses the document's key to assign it to particular VBucket. 
@@ -115,7 +156,7 @@ To assign VBuckets to servers, Couchbase uses a special table shown in Figure \r
 \label{fig:vbucket}
 \end{figure}	
 
-\subsubsection{Couchbase failover feature}
+\paragraph{Couchbase failover feature}
 Failover is the process of expulsion of server from the cluster. 
 If failover procedure is activated on the node, this server loses it membership in a cluster and it cannot rejoin to the cluster even after healing back. 
 The failover can be done manually or automatically. 
@@ -123,39 +164,44 @@ The automatic failover is de-activated by default, but you can easily activate i
 The automatic failover procedure will be started after a period of time that a server not responding to others.
 The minimum and default value for this period is 30 seconds. 
 
-\subsubsection{Couchbase rebalancing feature}
+\paragraph{Couchbase rebalancing feature}
 After expelling a server from the cluster using failover procedure, we need to rebalance the cluster. 
 The rebalancing procedure is necessary because the number of active servers in the cluster has changed and some of VBucket assignment are not valid anymore.
 When the rebalancing procedure is finished, we will have new VBucket assignment and some documents may be transferred to another server.
 
 
-\subsection{Voldemort}
+\subsubsection{Voldemort}
 
 Voldemort is a distributed key-value storage system, providing tunable consistency (strict quorum or eventual consistency). It is used in LinkedIn for certain 
 high-scalability storage problems where simple functional partitioning is not sufficient. 
 
 Voldemort combines in memory caching with the storage system so that a separate caching tier is not required. Unlike MySQL replication, the reads and writes scale horizontally. It also allows cluster expansion without rebalancing all data.
 
-Voldemort provides simple API for data replication and placement, which makes it easy to accommondate a wide range of application specific strategies.
+Voldemort provides simple API for data replication and placement, which makes it easy to accommodate a wide range of application specific strategies.
 
 
 \section{Implementation}
 
-These tests are similar for all three candidate storage systems in essence, but due to the specific characteristics of each system the details could differ. 
-For instance, some storage systems have peer-to-peer nature while the others have master-slave architecture, each of these categories needs different test scenarios to be able to carry out comprehensive tests.
+To implement our case study first we configured a small cluster setup, which we used as a sandbox for our experiments.
+Our setup had five virtual machines, with Ubuntu Linux installed on each of them along with the considered data storage system. 
+These five nodes were connected into a single virtual network, which was located behind a NAT separating them from the host system.
 
-Our setup consists of five virtual machines, with Ubuntu Linux installed on all of them along with the considered data storage system. 
-These five nodes are connected into a single virtual network, which is located behind a NAT separating it from the host system.
-To be able to communicate with the individual nodes of the storage system, we implemented a small client application which was running on a host system, whose requests were routed through the NAT to designated cluster nodes. 
-Overall configuration in shown on Figure \ref{fig:cluster}. 
+A small client application, which was running on a host system, was implemented for each storage system, considered in case study.
+The application were writing a series of integer values into some storage specific data collection.
+A client $i$ was sending a request to write some integer value $n$, such that $n\;mod\;5 = i$.
+Each write request was  routed through the NAT and stored on the node $N_i$. 
+Application implementation was quite similar for all three candidate storage systems, but due to the specific API used in each system the details were different.
+For instance, some storage systems have peer-to-peer nature, allowing to communicate with each node directly, while the others have master-slave architecture, which requires communicating with a whole cluster through the single proxy node. 
 
-In order to simulate the network partition in this cluster and disconnect nodes N1 and N2 from nodes N3,N4,N5 we configuring iptables firewall on each cluster node to drop packets, received from the partitioned part of the cluster.
-Note that the host system is always connected to the cluster nodes, so the partition exists only form the node's point of view.
+In order to simulate the network partition in this cluster and disconnect nodes N1 and N2 from nodes N3,N4,N5 we were changing configuration of iptables firewall on each cluster node to drop packets, received from the partitioned part of the cluster.
+Note that the clients were always connected to the cluster nodes, so the partition exists only form the data storage node's point of view.
+
+Overall cluster configuration is shown on Figure \ref{fig:cluster}.
 
 \begin{figure}[h!]
 	\centering
-	\includegraphics[width=\textwidth]{cluster}
-	\caption{Virtual cluster}
+	\includegraphics{cluster}
+	\caption{Cluster setup. Data storage system deployed on blue nodes N1-N5, client applications deployed on green nodes C1-C5. Red line represent the network partition}
 	\label{fig:cluster}
 \end{figure}
 
@@ -268,9 +314,7 @@ The objects to write are failed to meet the required-write (W = 5), so Voldemort
 However, hinted handoff allows the database to store some (may not all) of the failed objects, and write them back to the recovered nodes later. 
 This may result in a higher number of exceptions than missing objects in the end.
 
-\subsection{Conclusions}
-
-{\bf To be completed...}
+\section{Conclusions and Future work}
 
 In Couchbase, when failover feature is off, it performs very well under network partition and it is a real reliable CP system.
 However the problem is that the availability has been sacrificed extremely, for instance you cannot read or even write documents assigned to a VBucket on a down server until it comes back.
@@ -290,8 +334,6 @@ Maybe they have trusted too much to network infrastructure which is not a wise d
 We think that distributed storage community deeply needs to reconsider its procedure against network partition.
 If not, storage systems will not be enough consistent and reliable for enterprise users.
 
-
-\section{Future Work}
 In this paper we investigated the network partition problem in three different distributed storage systems, but we did not implement any solution to mitigate or solve the problem of network partition in these systems. 
 A partition aware script along with these systems can reduce the impact of this problem before being addressed by developer of these systems.
 In addition, various distributed storage systems exist and lots of them are not robust in network partition situations.
@@ -303,12 +345,12 @@ It seems useful to have these systems tested and inform the user of these system
 
 \begin{table}[h]
 	\centering
-	\begin{tabular}{|c|c|}
+	\begin{tabular}{|c|c|c|}
 		\hline
-		\rowcolor{light-gray} \textbf{Contributor} & \textbf{Experiments} \\ \hline
-		Ildar & Hazelcast  \\ \hline
-		Lonxiang & Voldemort  \\ \hline
-		Ali & Couchbase  \\ \hline
+		\rowcolor{light-gray} \textbf{Contributor} & \textbf{Experiments} & \textbf{Report} \\ \hline
+		Ildar & Hazelcast & Sections 1,2,3.2.1,5.1 \\ \hline
+		Lonxiang & Voldemort & Sections 3.2.3,5.3,6  \\ \hline
+		Ali & Couchbase & Sections 3.2.2,5.2,6 \\ \hline
 	\end{tabular}
 \end{table}
 
