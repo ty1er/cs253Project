@@ -96,7 +96,8 @@ Hazelcast also allows user to pick how many replicas maintain across the cluster
 \subsection{Couchbase}
 
 Couchbase is a distributed scalable document-oriented database, which runs on shared-nothing clusters.
-In terms of CAP theorem Couchbase is a typical CP system which means that it sacrifices availability for keeping stored data consistent.
+In terms of CAP theorem Couchbase is known as a typical CP system \cite{Couchbasewiki} which means that it sacrifices availability for keeping stored data consistent.
+Although we like to point out to that in its documentation is not mentioned that it is a CP system and just has emphasized on that it is a consistent system \cite{Couchbasedoc}.  
 However, it has a failover option that changes its behavior dramatically. 
 In order to explain failover feature in details, at first we briefly talk about Couchbase architecture and VBucket concept, then we describe the failover option and finally we explain what is rebalancing in Couchbase and why it is necessary.
 
@@ -199,37 +200,99 @@ On the other hand configuration, which used WAN replication perfectly survived t
 In our experiments we have used Couchbase 2.1.1, which is the latest available Community edition version. 
 Since Couchbase is a peer-to-peer system, there is no need to manually set up master node. 
 Servers obtain their configuration from each other in a peer-to-peer way.
+we have done different experiments on Couchbase and we will briefly express them one-by-one.
 
+\subsubsection{Couchbase experiment 1}
 To start testing and checking the configuration we wrote and later read 1000 documents to Couchbase system and all of them were successful. 
 The data is distributed approximately evenly among different servers (each server stores about 200 documents).
 Replication factor is equal to 1, means that a replica of each document is stored somewhere on another server.
+The cluster state after writing these writes in illustrated in Figure \ref{fig:diagram1}.
 When the Couchbase system is under stress (for example when virtual machines do not have access to enough RAM), we observe that sometimes the client code throw exceptions in writing data.
 However after checking the written data, that data exist on Couchbase, so we conclude that exception always is not a sign of unsuccessful write.  
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{diagram1}
+	\caption{Cluster state after writing 1000 documents on it successfully}
+	\label{fig:diagram1}
+\end{figure}
 
-When one of the servers is turned off, about 20\% of our writes ended up being lost.
+\subsubsection{Couchbase experiment 2}
+In this test, we wrote 1000 documents on cluster when one of the servers is turned off.
+The result is that about 20\% of our writes ended up being lost.
 In other words, just 803 documents were written into Couchbase successfully, and the client was attempting to write other documents to server N5 in a loop.
 The loop was infinitely executing as long as the node N5 was down.
+The cluster state after this test is illustrated in Figure \ref{fig:diagram2}.
 After writing documents to servers, if the N5 remains being unconnected and is expelled from the cluster using failover procedure, we were able to successfully read all the written documents.
 The successful reading are result of replication in Couchbase system.
 
-For the network partition tests with deactivated failover, all writes and reads were successful.  
-However, the number of replicas were reduced in comparison to prior test, so it lead us to design the next test. 
-In this test we also measured the number of reads and writes per second that are acknowledged in normal and network partition situations.
-The result was approximately the same in both conditions.
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{diagram2}
+	\caption{Cluster state after writing 1000 documents on it when one of the servers is down}
+	\label{fig:diagram2}
+\end{figure}
 
+\subsubsection{Couchbase experiment 3}
+For the network partition tests with deactivated failover, all writes and reads were successful.  
+However, the number of replicas were reduced in comparison to prior test, so it lead us to design the next test.
+The resulted system state can be seen in Figure \ref{fig:diagram3} and Figure \ref{fig:diagram4}.
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{diagram3}
+	\caption{Cluster state after writing 1000 documents on partitioned cluster with de-activated failover - partition 1}
+	\label{fig:diagram3}
+\end{figure}
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{diagram4}
+	\caption{Cluster state after writing 1000 documents on partitioned cluster with de-activated failover - partition 2}
+	\label{fig:diagram4}
+\end{figure}
+
+\subsubsection{Couchbase experiment 4} 
+Before starting test with activated failover feature, we measured the number of reads and writes per second that are acknowledged in normal and network partition situations.
+The result was approximately the same in both conditions.
+You can find the results in Figure \ref{fig:diagram5}.
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{diagram5}
+	\caption{Average time spent for writing 1000 documents on cluster in normal and partitioned situations}
+	\label{fig:diagram5}
+\end{figure}
+
+\subsubsection{Couchbase experiment 5}
 In this test, after writing the 1000 documents in partitioned mode, we turned off the N5 server and we started failover process manually.
 This time we just were able to read 850 data documents out of 1000 written documents in first place. 
 It shows that the replication policy of Couchbase was not successful in presence of network partition.
+You can compare the results in Figure \ref{fig:diagram6}.
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{diagram6}
+	\caption{Number of survived documents based on when going down of a server happens}
+	\label{fig:diagram6}
+\end{figure}
 
-In the next test, we introduced network partition while we were writing documents to Couchbase database and we started failover procedure prior to finishing of the writing process. 
+\subsubsection{Couchbase experiment 6}
+Before starting this test, 10K documents were on cluster, we call them old data in this part.
+The 100K documents which are written in this test on cluster are called new data in this part. 
+In this test, we introduced network partition while we were writing 100K documents to Couchbase database and we started failover procedure prior to finishing of the writing process. 
 About 24\% of writes were not successful, although this amount depends on the time, when the partition was introduced and failover procedure was started, and may vary between different tests.
 After document writes were finished, just about 15\% of these documents could be read from one partition and 66\% could be read from another partition.
 You may noticed the fact, that the total number of documents that have been read, is more that the number of written documents.
-As we mentioned before, the reason is that some unsuccessful written are not really unsuccessful and they are counted as unsuccessful because acknowledgment for these operations was was received, due to thrown exceptions. 
-We had stored some other documents before writing this series of documents, 70\% and 90\% of them could be read from these two different partitions.
+As we mentioned before, the reason is that some unsuccessful written are not really unsuccessful and they are counted as unsuccessful because acknowledgement for these operations was was received, due to thrown exceptions. 
+We had stored some other documents before writing this series of documents, old data, 70\% and 90\% of them could be read from these two different partitions.
 Again the total is more than 100\% , but this time the reason is that some documents are retrieved from available replications. 
 Then we fixed the partition and rebalanced the cluster again, 90\% of old documents and 15\% of new documents could be read from the joined cluster.
 It means that we lost the document stored on one of our partitions.
+You can find the results in Figure \ref{fig:diagram7}
+\begin{figure}[h!]
+	\centering
+	\includegraphics[width=\textwidth]{diagram7}
+	\caption{Number of successful writings or readings to cluster. P1 and P2 are two partitions. Old data was existed on cluster before this test. New data is this test's documents}
+	\label{fig:diagram7}
+\end{figure}
 
 \subsection{Voldemort}
 
